@@ -449,6 +449,7 @@ Tu peux regarder l’arbre, puis créer ton compte pour ajouter tes informations
   suggest:"Suggérer une modification",suggestIntro:"Cette fiche ne fait pas partie de votre famille proche : votre modification sera envoyée comme suggestion. La personne concernée ou un administrateur la validera.",
   sugSent:"Suggestion envoyée. Merci !",noChange:"Aucune modification.",sugsTitle:"Suggestions à valider",sugBy:n=>`proposé par ${n}`,accept:"Accepter",refuse:"Refuser",seeRecord:"Voir la fiche",
   noSugs:"Aucune suggestion en attente.",sugAccepted:"Modification acceptée",sugRefused:"Suggestion refusée",sugsPending:n=>`${n} suggestion(s) à valider`,sugsPendingTxt:"Des proches proposent de corriger une fiche. Vérifiez et acceptez ou refusez.",review:"Voir",
+  errPerm:"Accès refusé par la base de données",errPermTxt:"Les règles Firestore ne sont pas à jour : l’administrateur doit publier les nouvelles règles.",errLoad:"Impossible de charger l’arbre",errLoadTxt:"Vérifiez votre connexion internet, désactivez un éventuel bloqueur de publicités pour ce site, puis réessayez.",retry:"Réessayer",
   anonOff:"Le site n’est pas encore prêt : l’administrateur doit activer la connexion « Anonyme » dans Firebase.",
   accountMade:"Compte créé ! Retrouvez-vous maintenant dans l’arbre.",signinIntro:"Entrez l’e-mail et le mot de passe choisis lors de votre inscription.",
   gateIntro:"Entrez le code de la famille pour voir l’arbre. Pas besoin de compte pour regarder.",gateGo:"Voir l’arbre",gateNoCode:"Vous n’avez pas le code ? Demandez-le à Kevin ou à un proche.",
@@ -554,6 +555,7 @@ You can look at the tree, then create your account to add your information and y
   suggest:"Suggest a change",suggestIntro:"This record is outside your close family: your change will be sent as a suggestion. The person concerned or an administrator will approve it.",
   sugSent:"Suggestion sent. Thank you!",noChange:"Nothing changed.",sugsTitle:"Suggestions to review",sugBy:n=>`suggested by ${n}`,accept:"Accept",refuse:"Decline",seeRecord:"See record",
   noSugs:"No pending suggestions.",sugAccepted:"Change accepted",sugRefused:"Suggestion declined",sugsPending:n=>`${n} suggestion(s) to review`,sugsPendingTxt:"Relatives suggest a correction to a record. Check it and accept or decline.",review:"Review",
+  errPerm:"Access refused by the database",errPermTxt:"The Firestore rules are out of date: the administrator must publish the new rules.",errLoad:"Couldn’t load the tree",errLoadTxt:"Check your internet connection, turn off any ad blocker for this site, then try again.",retry:"Try again",
   anonOff:"The site isn’t ready yet: the administrator must enable “Anonymous” sign-in in Firebase.",
   accountMade:"Account created! Now find yourself in the tree.",signinIntro:"Enter the email and password you chose when you signed up.",
   gateIntro:"Enter the family code to see the tree. No account needed just to look.",gateGo:"See the tree",gateNoCode:"Don’t have the code? Ask Kevin or a relative.",
@@ -684,15 +686,19 @@ async function boot(){
 }
 /* ---- access: the family code opens the tree; an account is only needed to add or edit ---- */
 let dataUnsubs=[], viewerUnsub=null, viewerSeen=false, granting=false;
-function startData(){ if(dataUnsubs.length) return; const onErr=e=>console.warn(e);
+let dataRetries=0, dataErr="";
+function startData(){ if(dataUnsubs.length) return; dataErr="";
+  const onErr=e=>{ console.warn(e); const code=e&&e.code||"";
+    if(dataRetries<4){ dataRetries++; setTimeout(()=>{ dataUnsubs.forEach(f=>{ try{f()}catch(x){} }); dataUnsubs=[]; if(S.access==="ok") startData() },1200*dataRetries) }
+    else { dataErr=code.includes("permission")?"perm":"net"; render() } };
   dataUnsubs.push(db.collection("claims").limit(1000).onSnapshot(s=>{ S.claims=new Map(s.docs.map(d=>[d.id,d.data().uid])); scheduleRender() },onErr));
   dataUnsubs.push(db.collection("people").limit(1000).onSnapshot(s=>{ S.people=new Map(s.docs.map(d=>[d.id,d.data()])); S.ready.p=true; scheduleRender() },onErr));
   dataUnsubs.push(db.collection("unions").limit(1000).onSnapshot(s=>{ S.unions=new Map(s.docs.map(d=>[d.id,d.data()])); S.ready.u=true; scheduleRender() },onErr));
   dataUnsubs.push(db.doc("site/main").onSnapshot(s=>{ S.site=s.exists?s.data():null; S.ready.s=true; scheduleRender() },e=>{ S.ready.s=true; scheduleRender() }));
   subscribeSuggestions() }
-function stopData(){ dataUnsubs.forEach(f=>{ try{f()}catch(e){} }); dataUnsubs=[]; if(sugUnsub){ sugUnsub(); sugUnsub=null } S.ready={p:false,u:false,s:false}; S.people=new Map(); S.unions=new Map(); S.claims=new Map(); S.sugs=[] }
+function stopData(){ dataRetries=0; dataErr=""; dataUnsubs.forEach(f=>{ try{f()}catch(e){} }); dataUnsubs=[]; if(sugUnsub){ sugUnsub(); sugUnsub=null } S.ready={p:false,u:false,s:false}; S.people=new Map(); S.unions=new Map(); S.claims=new Map(); S.sugs=[] }
 function subscribeViewer(){ if(viewerUnsub){ viewerUnsub(); viewerUnsub=null } if(!ME.id){ viewerSeen=true; return }
-  viewerUnsub=db.doc("viewers/"+ME.id).onSnapshot(s=>{ ME.viewer=s.exists; viewerSeen=true; checkAccess() },e=>{ viewerSeen=true; checkAccess() }) }
+  viewerUnsub=db.doc("viewers/"+ME.id).onSnapshot({includeMetadataChanges:true},s=>{ if(s.metadata&&s.metadata.hasPendingWrites) return; ME.viewer=s.exists; viewerSeen=true; checkAccess() },e=>{ viewerSeen=true; checkAccess() }) }
 function checkAccess(){
   if(S.dbState!=="ok") return;
   if(ME.owner||ME.member||ME.viewer){ if(S.access!=="ok"){ S.access="ok"; startData(); render() } return }
@@ -740,7 +746,7 @@ let memUnsub=null, memSeen=false, admSeen=false;
 function subscribeMember(){
   if(memUnsub){ memUnsub(); memUnsub=null } ME.member=null; memSeen=false;
   if(!ME.id||ME.anon){ memSeen=true; updateCan(); return }
-  memUnsub=db.doc("members/"+ME.id).onSnapshot(s=>{ ME.member=s.exists?s.data():null; memSeen=true; if(ME.member&&ME.member.name&&!ME.name) ME.name=ME.member.name; const oldPid=ME.pid; updateCan(); checkAccess(); if(oldPid!==ME.pid) subscribeSuggestions(); scheduleRender();
+  memUnsub=db.doc("members/"+ME.id).onSnapshot({includeMetadataChanges:true},s=>{ if(s.metadata&&s.metadata.hasPendingWrites) return; ME.member=s.exists?s.data():null; memSeen=true; if(ME.member&&ME.member.name&&!ME.name) ME.name=ME.member.name; const oldPid=ME.pid; updateCan(); checkAccess(); if(oldPid!==ME.pid) subscribeSuggestions(); scheduleRender();
       if(SH.open&&SH.mode==="view") refreshSheet(true);
       if(ME.member&&!ME.owner&&!ME.pid&&pendingJoin){ pendingJoin=false; openJoin() } },e=>{ memSeen=true; updateCan(); checkAccess(); scheduleRender() });
 }
@@ -857,7 +863,8 @@ function render(){
   document.body.classList.toggle("gated",S.dbState==="ok"&&S.access!=="ok");
   if(S.dbState==="ok"&&S.access==="gate"){ renderGate(); return }
   if(S.dbState==="ok"&&S.access!=="ok"){ m.innerHTML=`<p class="muted">${PREF.lang==="fr"?"Chargement…":"Loading…"}</p>`; return }
-  if(!ready()){ m.innerHTML=`<p class="muted">${PREF.lang==="fr"?"Chargement de l’arbre…":"Loading the tree…"}</p>`; return }
+  if(!ready()){ if(dataErr){ m.innerHTML=`<div class="empty stack" style="align-items:center;gap:12px"><h2>${esc(t(dataErr==="perm"?"errPerm":"errLoad"))}</h2><p style="margin:0">${esc(t(dataErr==="perm"?"errPermTxt":"errLoadTxt"))}</p><button class="btn primary" onclick="location.reload()">${t("retry")}</button></div>`; return }
+    m.innerHTML=`<p class="muted">${PREF.lang==="fr"?"Chargement de l’arbre…":"Loading the tree…"}</p>`; return }
   if(!S.people.size&&!(route==="admin"&&ME.owner)){
     m.innerHTML=`<div class="empty stack" style="align-items:center;gap:14px"><h2>${esc(t("emptyTree"))}</h2>
       ${ME.owner?`<p style="margin:0">${esc(t("starterTxt"))}</p><label class="btn primary" for="starterFile">${esc(t("starterBtn"))}</label><input type="file" id="starterFile" accept="application/json,.json" class="sr"><p class="hint" id="starterProg"></p>`
