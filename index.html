@@ -114,8 +114,6 @@ h3{font-size:17px}
 .btn svg{width:18px;height:18px}
 .chip{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;border-radius:999px;padding:2px 9px;background:var(--surface-2);color:var(--muted)}
 .chip.verify{background:var(--verify-soft);color:var(--verify)}
-.chip.outside{background:var(--outside-soft);color:var(--ink)}
-.chip.outside::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--outside)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
 .field{display:flex;flex-direction:column;gap:5px;min-width:0}
 .field label,.flabel{font-size:14px;font-weight:700;color:var(--muted)}
@@ -184,7 +182,6 @@ details.disp summary::-webkit-details-marker{display:none}
 .pop{position:absolute;z-index:15;top:calc(100% + 6px);left:0;width:min(320px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;box-shadow:0 14px 40px rgba(10,14,40,.2)}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted);align-items:center}
 .legend i{display:inline-block;vertical-align:middle;margin-right:5px}
-.lg-out{width:10px;height:10px;border-radius:50%;background:var(--outside)}
 .lg-ver{width:14px;height:14px;border-radius:50%;background:var(--verify);color:#fff;font-style:normal;font-size:10px;line-height:14px;text-align:center;font-weight:700}
 .lg-raise{width:22px;border-top:2px dashed var(--muted)}
 .vp{position:relative;flex:1;min-height:320px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:
@@ -410,7 +407,7 @@ const T = {
   siteText:"Texte d’accueil",siteTextFr:"Texte en français",siteTextEn:"Texte en anglais",familyNameL:"Nom de la famille (titre)",
   recent:"Modifications récentes",undo:"Annuler",undone:"annulée",undoneT:"Modification annulée",trash:"Corbeille",restore:"Restaurer",restored:"Restauré",trashEmpty:"La corbeille est vide.",
   backup:"Sauvegarde",exportJson:"Exporter la sauvegarde (JSON)",importJson:"Importer une sauvegarde",inclContacts:"Inclure téléphones et e-mails",inclPhotos:"Inclure les photos",
-  importQ:n=>`Importer ${n} fiches ? Les fiches ayant le même identifiant seront remplacées. Rien n’est effacé.`,imported:"Sauvegarde importée",importBad:"Ce fichier n’est pas une sauvegarde de l’arbre.",
+  importQ:n=>`Importer ${n} fiches ? Les fiches existantes sont mises à jour ; les photos et informations ajoutées sur le site sont conservées.`,importPrune:"Mettre à la corbeille les fiches qui ne figurent plus dans ce fichier (sauf celles ajoutées sur le site)",imported:"Sauvegarde importée",importBad:"Ce fichier n’est pas une sauvegarde de l’arbre.",
   noLog:"Aucune modification pour l’instant.",by:"par",someone:"Quelqu’un",created:"a ajouté",updated:"a modifié",deletedV:"a retiré",restoredV:"a restauré",
   readOnly:"Vous consultez l’arbre en lecture seule. Pour ajouter ou corriger des informations, demandez à Kevin un accès « Éditeur ».",
   noDb:"Les données de la famille ne sont pas disponibles dans cet aperçu. Ouvrez le lien du site pour voir l’arbre.",
@@ -516,7 +513,7 @@ Tu peux regarder l’arbre, puis créer ton compte pour ajouter tes informations
   siteText:"Welcome text",siteTextFr:"French text",siteTextEn:"English text",familyNameL:"Family name (title)",
   recent:"Recent changes",undo:"Undo",undone:"undone",undoneT:"Change undone",trash:"Trash",restore:"Restore",restored:"Restored",trashEmpty:"The trash is empty.",
   backup:"Backup",exportJson:"Export backup (JSON)",importJson:"Import backup",inclContacts:"Include phones and emails",inclPhotos:"Include photos",
-  importQ:n=>`Import ${n} records? Records with the same id will be replaced. Nothing is erased.`,imported:"Backup imported",importBad:"This file is not a backup of the tree.",
+  importQ:n=>`Import ${n} records? Existing records are updated; photos and details added on the site are kept.`,importPrune:"Move records that are no longer in this file to the trash (except those added on the site)",imported:"Backup imported",importBad:"This file is not a backup of the tree.",
   noLog:"No changes yet.",by:"by",someone:"Someone",created:"added",updated:"edited",deletedV:"removed",restoredV:"restored",
   readOnly:"You are viewing the tree read-only. To add or correct information, ask Kevin for “Editor” access.",
   noDb:"The family data isn’t available in this preview. Open the site link to see the tree.",
@@ -641,7 +638,7 @@ function lineages(){ // founding couples: unions whose partners have no recorded
   return out.sort((a,b)=>a.name.localeCompare(b.name)) }
 const P_=id=>S.people.get(id);
 function brClass(id){const b=D.branch.get(id);return b==null||b<0?"brx":"br"+b}
-function isOutsideChild(id){return PREF.outside&&(D.parentUnions.get(id)||[]).some(u=>{const x=S.unions.get(u);return x&&!x.deleted&&x.type==="outside"})}
+function isOutsideChild(id){ return false }
 function partnersOf(uid,exclude){const u=S.unions.get(uid);return (u.partnerIds||[]).filter(x=>x!==exclude&&D.live(x))}
 function kidsOf(uid){const u=S.unions.get(uid);return (u.childIds||[]).filter(D.live)}
 function parentsOf(id){const out=[];(D.parentUnions.get(id)||[]).forEach(u=>{const x=S.unions.get(u);if(x&&!x.deleted)(x.partnerIds||[]).forEach(p=>{if(D.live(p)&&!out.includes(p))out.push(p)})});return out}
@@ -1006,7 +1003,6 @@ function drawDirList(){
   $("#dlist").innerHTML=ids.length?ids.map(id=>{const p=P_(id);return `<button class="prow" data-open="${esc(id)}">${avatarHTML(id)}<span class="main"><span class="nm">${esc(fullName(p))}</span><br><span class="sub">${esc(subLine(id))}</span>${chipsHTML(id)}</span><span class="fl" title="${esc(p.country?cname(p.country):"")}">${flag(p.country)}</span></button>`}).join(""):`<div class="empty" style="border:0">${esc(t("noResult"))}</div>`;
 }
 function chipsHTML(id){ const p=P_(id); const c=[];
-  if(isOutsideChild(id)) c.push(`<span class="chip outside">${esc(t("lgOutside"))}</span>`);
   if(p.needsVerification) c.push(`<span class="chip verify">? ${esc(t("lgVerify"))}</span>`);
   if(p.placeholder) c.push(`<span class="chip">${esc(t("toComplete"))}</span>`);
   return c.length?`<span class="chips">${c.join("")}</span>`:"" }
@@ -1045,7 +1041,9 @@ const G={CW:190,CH:68,SW:150,SG:12,HG:22,GG:44,VG:16,VGAP:62,LH:34,IND:28,FW:360
 let pendingFocus=null;
 function saveCollapsed(){LSX.set("collapsed",[...collapsed]);collapsedSaved=true}
 function kidGroups(pid){
-  const g=[]; for(const uid of (D.unionsOf.get(pid)||[])){ const kids=kidsOf(uid).filter(k=>D.blood.has(k)&&D.gen.get(k)===D.gen.get(pid)+1); if(kids.length) g.push({uid,kids}) } return g }
+  const g=[]; for(const uid of (D.unionsOf.get(pid)||[])){ const kids=kidsOf(uid).filter(k=>D.blood.has(k)&&D.gen.get(k)===D.gen.get(pid)+1); if(kids.length) g.push({uid,kids}) }
+  if(g.length>1&&!PREF.spouses){ const all=g.flatMap(x=>x.kids); const key=k=>{ const p=P_(k); return p.birth||("9999"+String(p.order||0).padStart(5,"0")) }; all.sort((a,b)=>key(a).localeCompare(key(b))); return [{uid:g[0].uid,kids:all}] }
+  return g }
 function buildNode(pid){
   const n={pid,groups:[],spouses:[]}; const gs=kidGroups(pid); n.nKids=gs.reduce((s,g)=>s+g.kids.length,0); n.hasKids=n.nKids>0;
   n.collapsed=n.hasKids&&collapsed.has(pid);
@@ -1061,14 +1059,8 @@ function textW(s,font){mctx.font=font;return mctx.measureText(s).width}
 function fitText(s,maxW,font){ s=String(s||""); if(textW(s,font)<=maxW) return s; while(s.length>1&&textW(s+"…",font)>maxW) s=s.slice(0,-1); return s.trimEnd()+"…" }
 const F_SUR="700 11px 'Atkinson Hyperlegible', Arial, sans-serif", F_GIV="700 15px 'Atkinson Hyperlegible', Arial, sans-serif", F_META="400 12.5px 'Atkinson Hyperlegible', Arial, sans-serif", F_LBL="700 11.5px 'Atkinson Hyperlegible', Arial, sans-serif";
 function groupLabel(parentId,uid,count){
-  if(count<2) return "";
-  const u=S.unions.get(uid); if(parentId==="__root") return "";
-  const others=partnersOf(uid,parentId);
-  const typ=u.type==="outside"?t("outside"):u.type==="partnership"?t("partnership"):u.type==="married"?t("married"):"";
-  if(!others.length) return [typ,t("otherParentUnknown")].filter(Boolean).join(" · ");
-  if(PREF.spouses) return `${t("withP")} ${fullName(P_(others[0]))}`;
-  return typ||t("unionOf");
-}
+  if(count<2||parentId==="__root"||!PREF.spouses) return "";
+  const others=partnersOf(uid,parentId); return others.length?`${t("withP")} ${fullName(P_(others[0]))}`:"" }
 function pw(n){return (n.root?G.FW:G.CW)+n.spouses.length*(G.SW+G.SG)}
 function nh(n){return n.root?G.FH:G.CH}
 function measure(n){
@@ -1284,12 +1276,12 @@ function renderTree(){
       <div class="seg" role="group" aria-label="${t("flipLayout")}">${[["cols","layoutCols"],["tree","layoutTree"],["radial","layoutRadial"]].map(([k,l])=>`<button data-layout="${k}" aria-pressed="${PREF.layout===k}">${t(l)}</button>`).join("")}</div>
       <details class="disp"><summary class="btn sm">${t("display")} ▾</summary><div class="pop">
         <div class="row" style="gap:8px;margin-bottom:6px"><button class="btn sm" id="tExp">${t("expandAll")}</button><button class="btn sm" id="tCol">${t("collapseAll")}</button></div>
-        ${[["spouses","showSpouses"],["outside","markOutside"],["dates","showDates"],["flags","showFlags"],["deceased","showDeceased"]].map(([k,l])=>`<label class="check"><input type="checkbox" id="pref-${k}" data-pref="${k}" ${PREF[k]?"checked":""}> ${t(l)}</label>`).join("")}
+        ${[["spouses","showSpouses"],["dates","showDates"],["flags","showFlags"],["deceased","showDeceased"]].map(([k,l])=>`<label class="check"><input type="checkbox" id="pref-${k}" data-pref="${k}" ${PREF[k]?"checked":""}> ${t(l)}</label>`).join("")}
       </div></details>
       <details class="disp"><summary class="btn sm">${t("download")} ▾</summary><div class="pop stack" style="gap:8px">
         <button class="btn sm" id="tPdf">${t("pdfTree")}</button><button class="btn sm" id="tPng">${t("pngTree")}</button><button class="btn sm primary" data-livret>${t("livret")}</button></div></details>
      </div>
-     <div class="legend"><span><i class="lg-out"></i>${t("lgOutside")}</span><span><i class="lg-ver">?</i>${t("lgVerify")}</span><span><i class="lg-raise"></i>${t("lgRaised")}</span></div>
+     <div class="legend"><span><i class="lg-ver">?</i>${t("lgVerify")}</span><span><i class="lg-raise"></i>${t("lgRaised")}</span></div>
      <div class="vp" id="vp"><svg id="tsvg" role="img" aria-label="${t("tree")}"><style>${SVG_CSS}</style><g id="troot"></g></svg>
       <div class="zoomctl"><button id="zIn" aria-label="${t("zoomIn")}">+</button><button id="zOut" aria-label="${t("zoomOut")}">−</button><button id="zFit" aria-label="${t("fit")}">${ICONS.fit}</button></div></div>
     </div>`;
@@ -1610,7 +1602,7 @@ function drawSheet(){
 }
 function formButtons(){ return `<div class="row" style="margin-top:20px"><button class="btn primary" id="shSave" style="flex:1">${t("save")}</button><button class="btn" data-back="view">${t("cancel")}</button></div>` }
 function relRow(id,extra=""){ const p=P_(id); return `<button class="prow" data-open="${esc(id)}">${avatarHTML(id)}<span class="main"><span class="nm">${esc(fullName(p))}</span><br><span class="sub">${esc([extra,lifeSpan(p,true)].filter(Boolean).join(" · "))}</span>${chipsHTML(id)}</span><span class="fl">${flag(p.country)}</span></button>` }
-function unionTypeLabel(ty){ return ty==="outside"?t("outside"):ty==="partnership"?t("partnership"):ty==="married"?t("married"):t("unspecified") }
+function unionTypeLabel(ty){ return ty==="partnership"?t("partnership"):ty==="married"?t("married"):t("unspecified") }
 function profileHTML(id){
   const p=P_(id); const blood=D.blood.has(id); const par=parentsOf(id);
   const sib=[],half=[];
@@ -1670,7 +1662,7 @@ function profileHTML(id){
    ${raisedBy.length?`<div class="rel"><h4>${t("raisedBy")}</h4><div class="plist">${raisedBy.map(x=>relRow(x)).join("")}</div></div>`:""}
    ${sib.length||half.length?`<div class="rel"><h4>${t("siblings")}</h4><div class="plist">${sib.map(x=>relRow(x)).join("")}${half.map(x=>relRow(x,t("halfSib"))).join("")}</div></div>`:""}
    ${unions.length?`<div class="rel"><h4>${t("spouses")}</h4><div class="stack" style="gap:10px">${unions.map(u=>{const x=S.unions.get(u);const o=partnersOf(u,id);const kids=kidsOf(u);
-      return `<div class="union-box"><div class="union-h"><span>${esc(unionTypeLabel(x.type))}</span>${o.length?`· <span>${esc(o.map(z=>fullName(P_(z))).join(", "))}</span>`:`· <span class="muted">${esc(t("otherParentUnknown"))}</span>`}${x.needsVerification?`<span class="chip verify">? ${t("lgVerify")}</span>`:""}
+      return `<div class="union-box"><div class="union-h">${o.length?`<span>${esc(unionTypeLabel(x.type))}</span> · <span>${esc(o.map(z=>fullName(P_(z))).join(", "))}</span>`:`<span>${esc(t("children_"))}</span>`}${x.needsVerification?`<span class="chip verify">? ${t("lgVerify")}</span>`:""}
         ${canEditU(u)?`<button class="btn sm" data-uedit="${esc(u)}" style="margin-left:auto;min-height:32px">${t("edit")}</button>`:""}</div>
         ${x.date||x.place?`<div class="hint" style="padding:6px 12px 0">💍 ${esc([fmtDate(x.date),x.place].filter(Boolean).join(" · "))}${x.end?` — ${esc(t("unionEnd"))} : ${esc(fmtDate(x.end))}`:""}</div>`:""}
         <div class="plist">${o.map(z=>relRow(z,PREF.lang==="fr"?"conjoint(e)":"spouse")).join("")}${kids.map(k=>relRow(k)).join("")}</div></div>`}).join("")}</div></div>`:""}
@@ -1734,7 +1726,7 @@ function childFormHTML(pid){
   const us=D.unionsOf.get(pid)||[];
   return `<div class="stack" style="gap:16px">
    <div class="field"><label for="cf-union">${t("whichUnion")}</label><select id="cf-union">${us.map(u=>{const o=partnersOf(u,pid);const x=S.unions.get(u);return `<option value="${esc(u)}">${esc(o.length?o.map(z=>fullName(P_(z))).join(", "):t("otherParentUnknown"))} (${esc(unionTypeLabel(x.type))})</option>`}).join("")}<option value="__new">${t("newUnionUnknown")}</option></select></div>
-   <div id="cf-newtype" hidden class="field"><label for="cf-type">${t("unionType")}</label><select id="cf-type">${["unspecified","outside","married","partnership"].map(v=>`<option value="${v}">${esc(unionTypeLabel(v))}</option>`).join("")}</select></div>
+   <div id="cf-newtype" hidden class="field"><label for="cf-type">${t("unionType")}</label><select id="cf-type">${["unspecified","married","partnership"].map(v=>`<option value="${v}">${esc(unionTypeLabel(v))}</option>`).join("")}</select></div>
    ${personFormHTML(null,{pre:"pf",full:false})}</div>` }
 function parentsFormHTML(p){
   const one=(pre,title,sex)=>`<fieldset class="fsec"><legend>${title}</legend><div class="stack" style="gap:12px">
@@ -1743,9 +1735,9 @@ function parentsFormHTML(p){
     <div class="grid2"><div class="field"><label for="${pre}-by">${t("yearOpt")} (${t("born").toLowerCase()})</label><input id="${pre}-by" inputmode="numeric" maxlength="4"></div>
     <label class="check" style="align-self:end"><input type="checkbox" id="${pre}-dead"> ${t("isDeceasedShort")}</label></div></div></fieldset>`;
   return `<div class="stack" style="gap:16px"><p class="hint" style="margin:0">${esc(t("addParentsHint"))}</p>${one("fa",t("father"),"M")}${one("mo",t("mother"),"F")}
-    <div class="field"><label for="par-type">${t("unionType")}</label><select id="par-type">${["married","partnership","outside","unspecified"].map(v=>`<option value="${v}">${esc(unionTypeLabel(v))}</option>`).join("")}</select></div></div>` }
+    <div class="field"><label for="par-type">${t("unionType")}</label><select id="par-type">${["married","partnership","unspecified"].map(v=>`<option value="${v}">${esc(unionTypeLabel(v))}</option>`).join("")}</select></div></div>` }
 function unionFormHTML(uid){ const x=S.unions.get(uid)||{};
-  return `<div class="stack" style="gap:16px"><div class="field"><label for="un-type">${t("unionType")}</label><select id="un-type">${["married","partnership","outside","unspecified"].map(v=>`<option value="${v}" ${(x.type||"unspecified")===v?"selected":""}>${esc(unionTypeLabel(v))}</option>`).join("")}</select></div>
+  return `<div class="stack" style="gap:16px"><div class="field"><label for="un-type">${t("unionType")}</label><select id="un-type">${["married","partnership","unspecified"].map(v=>`<option value="${v}" ${(x.type||"unspecified")===v?"selected":""}>${esc(unionTypeLabel(v))}</option>`).join("")}</select></div>
     <div class="field"><span class="flabel">${t("marriageDate")}</span>${dateInputs("un-d",x.date)}</div>
     <div class="field"><label for="un-place">${t("marriagePlace")}</label><input id="un-place" value="${esc(x.place||"")}"></div>
     <div class="field"><span class="flabel">${t("unionEnd")}</span>${dateInputs("un-e",x.end)}</div></div>` }
@@ -1938,7 +1930,7 @@ function wizardHTML(){
   if(s===2){ const us=D.unionsOf.get(W.parent)||[]; body=`<h2>${t("wiz2")}</h2><div class="card plist" style="overflow:hidden">${relRow(W.parent)}</div>
     <div class="stack" style="gap:8px">${us.map(u=>{const o=partnersOf(u,W.parent);const x=S.unions.get(u);return `<label class="check card" style="padding:10px 14px"><input type="radio" name="wzu" value="${esc(u)}" ${W.union===u?"checked":""}> ${esc(o.length?o.map(z=>fullName(P_(z))).join(", "):t("otherParentUnknown"))} <span class="muted">(${esc(unionTypeLabel(x.type))})</span></label>`}).join("")}
      <label class="check card" style="padding:10px 14px"><input type="radio" name="wzu" value="__new" ${W.union==="__new"||(!us.length&&!W.union)?"checked":""}> ${t("newUnionUnknown")}</label></div>
-    <div class="field" id="wzTypeBox" hidden><label for="wzType">${t("unionType")}</label><select id="wzType">${["unspecified","outside","married","partnership"].map(v=>`<option value="${v}" ${W.utype===v?"selected":""}>${esc(unionTypeLabel(v))}</option>`).join("")}</select></div>` }
+    <div class="field" id="wzTypeBox" hidden><label for="wzType">${t("unionType")}</label><select id="wzType">${["unspecified","married","partnership"].map(v=>`<option value="${v}" ${W.utype===v?"selected":""}>${esc(unionTypeLabel(v))}</option>`).join("")}</select></div>` }
   if(s===3) body=`<h2>${t("wiz3")}</h2><p class="hint">${t("wiz3h")}</p>${personFormHTML(W.me,{pre:"pf",full:false,compact:true})}`;
   if(s===4) body=`<h2>${t("wiz4")}</h2><p class="hint">${t("wiz4h")}</p><div class="field"><label for="wzSpT">${t("unionType")}</label><select id="wzSpT">${["married","partnership","unspecified"].map(v=>`<option value="${v}" ${(W.spType||"married")===v?"selected":""}>${esc(unionTypeLabel(v))}</option>`).join("")}</select></div>${personFormHTML(W.sp,{pre:"sp",full:false,compact:true})}`;
   if(s===5) body=`<h2>${t("wiz5")}</h2><p class="hint">${t("wiz5h")}</p><div class="stack" id="wzKids" style="gap:8px">${W.kids.map((k,i)=>`<div class="kidrow"><input class="inp" data-kn="${i}" value="${esc(k.n)}" placeholder="${esc(t("placeholderName",i+1))}" aria-label="${t("given")}"><input class="inp" data-ky="${i}" value="${esc(k.y)}" inputmode="numeric" maxlength="4" placeholder="${t("yearOpt")}" aria-label="${t("yearOpt")}"><button class="xbtn" data-kx="${i}" aria-label="${t("remove")}">${ICONS.x}</button></div>`).join("")}</div>
@@ -2064,16 +2056,20 @@ async function importBackupStart(file){
   let data=null; try{ data=JSON.parse(await file.text()) }catch(e){}
   if(!data||!data.people||!data.unions){ zone.innerHTML=`<p style="color:var(--danger)">${t("importBad")}</p>`; return }
   const n=Object.keys(data.people).length;
-  zone.innerHTML=`<div class="confirm stack" style="gap:10px"><p style="margin:0">${esc(t("importQ",n))}</p><div class="row"><button class="btn primary" id="imYes">${t("importJson")}</button><button class="btn" id="imNo">${t("cancel")}</button></div><p class="hint" id="imProg"></p></div>`;
+  zone.innerHTML=`<div class="confirm stack" style="gap:10px"><p style="margin:0">${esc(t("importQ",n))}</p><label class="check"><input type="checkbox" id="imPrune" checked> ${t("importPrune")}</label><div class="row"><button class="btn primary" id="imYes">${t("importJson")}</button><button class="btn" id="imNo">${t("cancel")}</button></div><p class="hint" id="imProg"></p></div>`;
   $("#imNo").onclick=()=>zone.innerHTML="";
-  $("#imYes").onclick=async()=>{ $("#imYes").disabled=true; try{ await importData(data,$("#imProg")); zone.innerHTML="" }catch(e){ $("#imYes").disabled=false } } }
+  $("#imYes").onclick=async()=>{ $("#imYes").disabled=true; data._prune=$("#imPrune").checked; try{ await importData(data,$("#imProg")); zone.innerHTML="" }catch(e){ $("#imYes").disabled=false } } }
 async function importData(data,prog){
   let k=0; const tot=Object.keys(data.people).length+Object.keys(data.unions).length; const P=x=>{ if(prog) prog.textContent=`${x}/${tot}` };
   try{
     if(data.site) await db.doc("site/main").set(Object.assign({},data.site,{editedBy:ME.name||"",updatedAt:new Date().toISOString()}));
     let batch=db.batch(), inBatch=0; const flush=async()=>{ if(inBatch){ await batch.commit(); batch=db.batch(); inBatch=0; P(k) } };
-    for(const [id,p] of Object.entries(data.people)){ const pp=Object.assign(blankPerson(),p); delete pp.phone; delete pp.email; delete pp.accountId; batch.set(db.doc("people/"+id),pp); k++; if(++inBatch>=100) await flush() }
-    for(const [id,u] of Object.entries(data.unions)){ batch.set(db.doc("unions/"+id),u); k++; if(++inBatch>=100) await flush() }
+    const keepFilled=(cur,nw)=>{ if(!cur) return nw; const o=Object.assign({},cur); for(const [k2,v] of Object.entries(nw)){ if(v===""&&cur[k2]) continue; o[k2]=v } return o };
+    for(const [id,p] of Object.entries(data.people)){ const pp=Object.assign(blankPerson(),p); delete pp.phone; delete pp.email; delete pp.accountId; batch.set(db.doc("people/"+id),keepFilled(S.people.get(id),pp)); k++; if(++inBatch>=100) await flush() }
+    for(const [id,u] of Object.entries(data.unions)){ batch.set(db.doc("unions/"+id),keepFilled(S.unions.get(id),u)); k++; if(++inBatch>=100) await flush() }
+    if(data._prune){ const now=new Date().toISOString();
+      for(const [id,p] of S.people){ if(!data.people[id]&&!p.deleted&&!p.createdBy){ batch.set(db.doc("people/"+id),Object.assign({},p,{deleted:true,deletedAt:now,deletedBy:ME.name||""})); if(++inBatch>=100) await flush() } }
+      for(const [id,u] of S.unions){ if(!data.unions[id]&&!u.deleted&&!u.createdBy){ batch.set(db.doc("unions/"+id),Object.assign({},u,{deleted:true})); if(++inBatch>=100) await flush() } } }
     await flush();
     for(const [id,ph] of Object.entries(data.photos||{})){ if(ph) await db.doc("photos/"+id).set({data:ph,editedBy:ME.name||"",updatedAt:new Date().toISOString()}) }
     for(const [id,c] of Object.entries(data.contacts||{})){ if(c) await db.doc("contacts/"+id).set(c) }
