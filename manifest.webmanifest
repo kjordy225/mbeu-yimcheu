@@ -1,0 +1,15 @@
+{
+  "name": "Famille MBEU YIMCHEU / KEUNANG",
+  "short_name": "MBEU YIMCHEU",
+  "description": "L’arbre de la famille MBEU YIMCHEU / KEUNANG",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f2f3f7",
+  "theme_color": "#1d275e",
+  "lang": "fr",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
