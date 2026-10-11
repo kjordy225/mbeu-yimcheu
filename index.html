@@ -358,7 +358,6 @@ const FIREBASE_CONFIG = {
   appId: "1:657309082323:web:0bc0c1a1eeb7fb53642a26"
 };
 const ADMIN_EMAIL  = "jordankevinyonkeu@gmail.com";   // clé maîtresse
-const SHARED_ADMIN_EMAIL = "admin@mbeuyimcheu.com";    // compte administrateur partagé
 /* ===================================================================== */
 </script>
 <script>
@@ -425,7 +424,7 @@ const T = {
   joinTitle:"Rejoindre l’arbre",codeTitle:"Code de la famille",codeIntro:"Entrez le code de la famille (demandez-le à Kevin) pour pouvoir modifier l’arbre.",codeL:"Code de la famille",codeBad:"Code incorrect.",
   whoTitle:"Qui êtes-vous ?",whoIntro:"Cherchez votre nom dans l’arbre. Si vous y êtes déjà, choisissez « C’est moi ».",notInTree:"Je ne suis pas encore dans l’arbre",
   claimQ:n=>`Confirmer : vous êtes ${n} ?`,claimYes:"Oui, c’est moi",claimed:"déjà relié à un compte",claimTaken:"Cette fiche est déjà reliée à un autre compte. Contactez Kevin si c’est une erreur.",
-  claimDone:"C’est fait ! Vous pouvez maintenant compléter votre fiche.",myRecord:"Ma fiche",joinBtn:"Créer mon compte",joinCard:"Vous faites partie de la famille ?",joinCardTxt:"Créez un compte, entrez le code de la famille et retrouvez-vous dans l’arbre. Vous pourrez ensuite compléter votre fiche et celles de vos enfants.",
+  pendSent:"Demande envoyée. Un administrateur va confirmer que c’est bien vous.",pendTxt:"Votre lien avec cette fiche attend la confirmation d’un administrateur. Vous pourrez ensuite la modifier.",pendBadge:"à confirmer",approve:"Confirmer",refuse:"Refuser",approvedT:"Lien confirmé",pendCount:n=>`${n} lien${n>1?"s":""} à confirmer`,pendAdminTxt:"Vérifiez que chaque personne est bien celle qu’elle dit être, puis confirmez ou refusez dans « Membres inscrits ».",claimDone:"C’est fait ! Vous pouvez maintenant compléter votre fiche.",myRecord:"Ma fiche",joinBtn:"Créer mon compte",joinCard:"Vous faites partie de la famille ?",joinCardTxt:"Créez un compte, entrez le code de la famille et retrouvez-vous dans l’arbre. Vous pourrez ensuite compléter votre fiche et celles de vos enfants.",
   finishJoin:"Terminer mon inscription",finishJoinTxt:"Il reste une étape : entrez le code de la famille et retrouvez-vous dans l’arbre.",
   moveParent:"Changer mes parents",moveTitle:"Sous quel parent êtes-vous ?",moved:"Votre place dans l’arbre a été mise à jour.",
   canEditHint:"Vous pouvez modifier votre fiche, celle de votre conjoint et celles de vos enfants.",
@@ -453,7 +452,7 @@ Tu peux regarder l’arbre, puis créer ton compte pour ajouter tes informations
   haveAccount:"J’ai déjà un compte : me connecter",helpTitle:"Comment ça marche ?",faq:"Questions fréquentes",
   h1t:"Regarder l’arbre",h1:"Entrez le code de la famille. C’est tout : vous pouvez parcourir l’arbre, les fiches et le mémorial.",
   h2t:"Créer votre compte (pour ajouter vos informations)",h2:"Appuyez sur « Se connecter / S’inscrire », puis « Créer un compte » : votre nom, votre e-mail et un mot de passe de votre choix.",
-  h3t:"Vous retrouver dans l’arbre",h3:"Cherchez votre nom et appuyez sur « C’est moi ». Si vous n’y êtes pas, choisissez « Je ne suis pas encore dans l’arbre » et indiquez votre parent.",
+  h3t:"Vous retrouver dans l’arbre",h3:"Cherchez votre nom et appuyez sur « C’est moi ». Si vous n’y êtes pas, choisissez « Je ne suis pas encore dans l’arbre » et indiquez votre parent. Un administrateur confirme ensuite que c’est bien vous.",
   h4t:"Compléter votre fiche",h4:"Vous pouvez modifier votre fiche, celle de votre conjoint, de vos enfants et petits-enfants, de vos parents, grands-parents, frères et sœurs. Pour les autres, vous proposez une modification que la personne ou un administrateur valide.",
   q1:"J’ai oublié mon mot de passe.",a1:"Sur l’écran de connexion, choisissez « Se connecter », entrez votre e-mail puis « Mot de passe oublié ? ». Vous recevrez un e-mail pour en choisir un nouveau.",
   q2:"Je me suis trompé de fiche en appuyant sur « C’est moi ».",a2:"Prévenez un administrateur : il peut délier votre compte depuis la page Admin.",
@@ -531,7 +530,7 @@ Tu peux regarder l’arbre, puis créer ton compte pour ajouter tes informations
   joinTitle:"Join the tree",codeTitle:"Family code",codeIntro:"Enter the family code (ask Kevin) to be able to edit the tree.",codeL:"Family code",codeBad:"Wrong code.",
   whoTitle:"Who are you?",whoIntro:"Search for your name in the tree. If you are already there, choose “This is me”.",notInTree:"I’m not in the tree yet",
   claimQ:n=>`Confirm: you are ${n}?`,claimYes:"Yes, this is me",claimed:"already linked to an account",claimTaken:"This record is already linked to another account. Contact Kevin if this is a mistake.",
-  claimDone:"Done! You can now complete your record.",myRecord:"My record",joinBtn:"Create my account",joinCard:"Are you part of the family?",joinCardTxt:"Create an account, enter the family code and find yourself in the tree. You can then complete your record and your children’s.",
+  pendSent:"Request sent. An administrator will confirm it’s really you.",pendTxt:"Your link to this record is waiting for an administrator to confirm it. You will then be able to edit it.",pendBadge:"to confirm",approve:"Confirm",refuse:"Decline",approvedT:"Link confirmed",pendCount:n=>`${n} link${n>1?"s":""} to confirm`,pendAdminTxt:"Check that each person is who they say they are, then confirm or decline under “Registered members”.",claimDone:"Done! You can now complete your record.",myRecord:"My record",joinBtn:"Create my account",joinCard:"Are you part of the family?",joinCardTxt:"Create an account, enter the family code and find yourself in the tree. You can then complete your record and your children’s.",
   finishJoin:"Finish signing up",finishJoinTxt:"One step left: enter the family code and find yourself in the tree.",
   moveParent:"Change my parents",moveTitle:"Which parent are you under?",moved:"Your place in the tree was updated.",
   canEditHint:"You can edit your record, your spouse’s and your children’s.",
@@ -559,7 +558,7 @@ You can look at the tree, then create your account to add your information and y
   haveAccount:"I already have an account: sign in",helpTitle:"How does it work?",faq:"Frequently asked questions",
   h1t:"View the tree",h1:"Enter the family code. That’s all: you can browse the tree, the records and the memorial.",
   h2t:"Create your account (to add your information)",h2:"Tap “Sign in / Sign up”, then “Create an account”: your name, your email and a password of your choice.",
-  h3t:"Find yourself in the tree",h3:"Search for your name and tap “This is me”. If you’re not there, choose “I’m not in the tree yet” and pick your parent.",
+  h3t:"Find yourself in the tree",h3:"Search for your name and tap “This is me”. If you’re not there, choose “I’m not in the tree yet” and pick your parent. An administrator then confirms it’s really you.",
   h4t:"Complete your record",h4:"You can edit your own record, your spouse’s, your children’s and grandchildren’s, your parents’, grandparents’ and siblings’. For anyone else you suggest a change, which that person or an administrator approves.",
   q1:"I forgot my password.",a1:"On the sign-in screen, choose “Sign in”, enter your email then “Forgot password?”. You’ll get an email to choose a new one.",
   q2:"I tapped “This is me” on the wrong record.",a2:"Tell an administrator: they can unlink your account from the Admin page.",
@@ -596,7 +595,7 @@ function cname(c){try{return new Intl.DisplayNames([PREF.lang],{type:"region"}).
 const S={people:new Map(),unions:new Map(),site:null,log:[],trashU:[],ready:{p:false,u:false,s:false},dbState:"loading"};
 let D=null; // derived
 let db=null,auth=null;
-const ME={acct:false,anon:false,viewer:false,master:false,id:null,email:"",owner:false,canWrite:false,member:null,pid:"",name:LSX.get("name","")};
+const ME={acct:false,anon:false,viewer:false,master:false,id:null,email:"",owner:false,canWrite:false,member:null,pid:"",pend:"",name:LSX.get("name","")};
 S.claims=new Map(); S.members=[]; S.codes=[]; S.admins=new Set();
 let collapsed=new Set(LSX.get("collapsed",[])), collapsedSaved=LSX.get("collapsed",null)!==null;
 let route=(location.hash||"#home").slice(1)||"home"; let pendingFiche=null;
@@ -676,8 +675,8 @@ async function boot(){
   auth.onAuthStateChanged(u=>{
     stopData(); S.access="checking";
     ME.id=u?u.uid:null; ME.anon=!!(u&&u.isAnonymous); ME.acct=!!u&&!ME.anon; ME.email=u&&!u.isAnonymous?(u.email||""):"";
-    const em=ME.email.toLowerCase(); ME.master=!!em&&em===ADMIN_EMAIL.toLowerCase(); ME.owner=ME.master||(!!em&&em===SHARED_ADMIN_EMAIL.toLowerCase());
-    if(ME.acct) ME.name=u.displayName||(isAdminEmail(ME.email)?(PREF.lang==="fr"?"Administrateur":"Administrator"):"");
+    const em=ME.email.toLowerCase(); ME.master=!!em&&em===ADMIN_EMAIL.toLowerCase(); ME.owner=ME.master;
+    if(ME.acct) ME.name=u.displayName||(isAdminEmail(ME.email)?(PREF.lang==="fr"?"Administrateur":"Administrator"):signupName); signupName="";
     ME.viewer=false; viewerSeen=false;
     subscribeMember(); subscribeAdmin(); subscribeViewer(); subscribeLog(); updateCan(); checkAccess(); render(); if(SH.open&&SH.mode==="view") refreshSheet(true) });
 }
@@ -706,7 +705,7 @@ function checkAccess(){
   else if(!code){ S.access="gate"; render() } }
 async function grantAccess(code){ granting=true;
   try{ if(ME.anon) await db.doc("viewers/"+ME.id).set({code,at:new Date().toISOString()});
-       else await db.doc("members/"+ME.id).set({code,name:ME.name||"",email:ME.email||"",personId:"",createdAt:new Date().toISOString()}) }
+       else await db.doc("members/"+ME.id).set({code,name:ME.name||"",email:ME.email||"",personId:"",approved:false,createdAt:new Date().toISOString()}) }
   finally{ granting=false } }
 async function submitGate(code){ code=code.trim(); if(!code) return; S.gateErr=""; LSX.set("code",code);
   if(!ME.id){ granting=true; try{ await auth.signInAnonymously() }catch(e){ S.gateErr=String(e&&e.code||"").includes("operation-not-allowed")?t("anonOff"):t("errNet"); S.access="gate"; render() } finally{ granting=false } return }
@@ -745,9 +744,10 @@ function subscribeMember(){
   if(!ME.id||ME.anon){ memSeen=true; updateCan(); return }
   memUnsub=db.doc("members/"+ME.id).onSnapshot({includeMetadataChanges:true},s=>{ if(s.metadata&&s.metadata.hasPendingWrites) return; ME.member=s.exists?s.data():null; memSeen=true; if(ME.member&&ME.member.name&&!ME.name) ME.name=ME.member.name; const oldPid=ME.pid; updateCan(); checkAccess(); if(oldPid!==ME.pid) subscribeSuggestions(); scheduleRender();
       if(SH.open&&SH.mode==="view") refreshSheet(true);
-      if(ME.member&&!ME.owner&&!ME.pid&&pendingJoin){ pendingJoin=false; openJoin() } },e=>{ memSeen=true; updateCan(); checkAccess(); scheduleRender() });
+      if(ME.member&&!ME.owner&&!ME.pid&&!ME.pend&&pendingJoin){ pendingJoin=false; openJoin() } },e=>{ memSeen=true; updateCan(); checkAccess(); scheduleRender() });
 }
 let pendingJoin=false, admUnsub=null, adminsUnsub=null;
+let signupName=""; // the name typed when creating an account: the account's own display name is only saved a moment later
 function subscribeAdmin(){
   if(admUnsub){ admUnsub(); admUnsub=null }
   if(adminsUnsub){ adminsUnsub(); adminsUnsub=null; S.admins=new Set() }
@@ -757,7 +757,9 @@ function subscribeAdmin(){
   if(ME.owner) return;
   admUnsub=db.doc("admins/"+ME.id).onSnapshot(s=>{ const was=ME.owner; ME.owner=s.exists; admSeen=true; updateCan(); checkAccess(); if(was!==ME.owner){ subscribeLog(); subscribeSuggestions(); scheduleRender(); if(SH.open&&SH.mode==="view") refreshSheet(true) } },e=>{ admSeen=true; checkAccess() });
 }
-function updateCan(){ ME.pid=(ME.member&&ME.member.personId)||""; ME.canWrite=!!ME.id&&!ME.anon&&(ME.owner||!!ME.pid) }
+// A member's link to their record only counts once an administrator has confirmed it; until then it is "pending" (ME.pend).
+function updateCan(){ const linked=(ME.member&&ME.member.personId)||""; ME.pend=linked&&!ME.owner&&ME.member.approved!==true?linked:""; ME.pid=ME.pend?"":linked; ME.canWrite=!!ME.id&&!ME.anon&&(ME.owner||!!ME.pid) }
+function isPendM(m){ return !!m.personId&&m.approved!==true&&(m.email||"").toLowerCase()!==ADMIN_EMAIL.toLowerCase()&&!(S.admins&&S.admins.has(m._id)) }
 /* direct edits: yourself, spouse, children & grandchildren, parents & grandparents, brothers & sisters.
    Anyone else: a suggestion that the person (if linked), an admin or the master key accepts. */
 function kinVia(id){ if(!ME.pid) return null; const me=ME.pid; const p=P_(id); if(!p) return null;
@@ -916,6 +918,7 @@ function renderHome(){
     <div class="stat"><b>${cs.length}</b><span>${t("countriesLive")}</span><div class="flags" title="${esc(cs.map(cname).join(", "))}">${cs.map(flag).join(" ")}</div></div>
   </section>
   ${S.dbState==="ok"?homeCardHTML():""}
+  ${ME.owner&&S.members.some(isPendM)?`<section class="card todo" style="border-color:var(--verify)"><div style="flex:1;min-width:220px"><h3>${esc(t("pendCount",S.members.filter(isPendM).length))}</h3><p class="hint" style="margin:4px 0 0">${esc(t("pendAdminTxt"))}</p></div><button class="btn primary" data-route="admin">${t("review")}</button></section>`:""}
   ${S.sugs&&S.sugs.length?`<section class="card todo" style="border-color:var(--verify)"><div style="flex:1;min-width:220px"><h3>${esc(t("sugsPending",S.sugs.length))}</h3><p class="hint" style="margin:4px 0 0">${esc(t("sugsPendingTxt"))}</p></div><button class="btn primary" data-sugs>${t("review")}</button></section>`:""}
   <section class="quick">
     <button class="qbtn" data-route="tree">${ICONS.tree}<span>${t("tree")}</span></button>
@@ -940,7 +943,7 @@ function renderHome(){
   inp.addEventListener("input",()=>{ res.innerHTML=resultsHTML(searchPeople(inp.value)) });
   res.addEventListener("click",e=>{const b=e.target.closest("[data-open]"); if(b) openProfile(b.dataset.open)});
   $$(".bcard").forEach(b=>b.onclick=()=>{ const id=b.dataset.branch; D.heads.forEach(h=>{ if(h!==id) collapsed.add(h) }); collapsed.delete(id); saveCollapsed(); pendingFocus={id,zoom:0.85,top:true}; go("tree") });
-  const ha=$("#homeAdd"); if(ha) ha.onclick=()=>{ if(!ME.acct) openLogin(); else if(!ME.owner&&!ME.pid) openJoin(); else if(ME.pid) openProfile(ME.pid); else openWizard() };
+  const ha=$("#homeAdd"); if(ha) ha.onclick=()=>{ if(!ME.acct) openLogin(); else if(ME.pend) openProfile(ME.pend); else if(!ME.owner&&!ME.pid) openJoin(); else if(ME.pid) openProfile(ME.pid); else openWizard() };
   const td=$("#homeTodo"); if(td) td.onclick=()=>{ DIRF.special="todo"; go("dir") };
 }
 
@@ -957,6 +960,7 @@ if("serviceWorker" in navigator&&location.protocol==="https:"){ window.addEventL
 function homeCardHTML(){
   let h,txt,btn;
   if(!ME.acct){ h=t("joinCard"); txt=t("joinCardTxt"); btn=`${ICONS.plus}${esc(t("joinBtn"))}` }
+  else if(ME.pend){ h=fullName(P_(ME.pend)); txt=t("pendTxt"); btn=esc(t("myRecord")) }
   else if(!ME.owner&&!ME.pid){ h=t("finishJoin"); txt=t("finishJoinTxt"); btn=esc(t("finishJoin")) }
   else if(ME.pid){ h=fullName(P_(ME.pid)); txt=t("canEditHint"); btn=esc(t("myRecord")) }
   else { h=t("addMemberLong"); txt=t("wiz1h"); btn=`${ICONS.plus}${esc(t("addMember"))}` }
@@ -1575,7 +1579,8 @@ const SH={open:false,id:null,mode:"view",ctx:null};
 function openProfile(id){ CR.img=null; SH.open=true; SH.id=id; SH.mode="view"; SH.ctx=null; SH.photo=null; SH.contact=null; drawSheet(); loadPhoto(id); loadContact(id) }
 async function loadContact(id){ if(!db||!(ME.owner||ME.member)) return; try{ const s=await db.doc("contacts/"+id).get(); if(s.exists&&SH.id===id){ SH.contact=s.data(); if(SH.mode==="view") drawSheet() } }catch(e){} }
 function closeSheet(){ SH.open=false; $("#overlay").hidden=true; document.body.style.overflow="" }
-function refreshSheet(force){ if(!SH.open) return; if(SH.mode==="view"||force) drawSheet() }
+function refreshSheet(force){ if(!SH.open) return; if(SH.mode==="view"||force) drawSheet();
+  else if(SH.mode==="join"&&$("#jnq")) $("#jnres").innerHTML=claimResults($("#jnq").value) } // the tree may finish loading after the "who are you" step opens
 $("#overlay").addEventListener("click",e=>{ if(e.target.id==="overlay") closeSheet() });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&SH.open) closeSheet() });
 async function loadPhoto(id){ if(!db) return; try{ const s=await db.doc("photos/"+id).get(); if(s.exists&&SH.id===id){ SH.photo=s.data().data; if(SH.mode==="view") drawSheet() } }catch(e){} }
@@ -1637,6 +1642,7 @@ function profileHTML(id){
      <div class="row" style="gap:6px;margin-top:8px">${chipsHTML(id)}${isMine?`<span class="chip">${t("itsYou")}</span>`:""}</div>
      ${cw&&!p.placeholder?`<div style="margin-top:10px">${meterHTML(p)}</div>`:""}</div></div>
    ${p.needsVerification&&p.verifyNote?`<div class="hint" style="color:var(--verify)">? ${esc(p.verifyNote)}</div>`:""}
+   ${ME.pend===id?`<div class="hint" style="color:var(--verify);font-weight:700">⏳ ${esc(t("pendTxt"))}</div>`:""}
    ${(()=>{ if(!ME.pid||id===ME.pid||!P_(ME.pid)) return ""; const r=relationText(ME.pid,id); const me=fullName(P_(ME.pid)); if(!r.startsWith(me+" ")) return "";
       const txt=(PREF.lang==="fr"?"Vous"+r.slice(me.length).replace(/^ est /," êtes "):"You"+r.slice(me.length).replace(/^ is /," are ")).split(". ")[0].replace(/\.$/,"")+".";
       return `<div class="hint" style="font-size:15px;color:var(--accent);font-weight:700">🔗 ${esc(txt)}</div>` })()}
@@ -1652,7 +1658,7 @@ function profileHTML(id){
      <button class="btn" data-mode="spouse">${t("addSpouse")}</button>`:""}</div>`:""}
    <div class="row">${(blood||D.spouseOf.has(id))?`<button class="btn sm" id="shTree">${t("showInTree")}</button>`:""}<button class="btn sm" data-sharelink="${esc(id)}">${t("shareRecord")}</button>
      ${!ME.acct&&S.dbState==="ok"?`<button class="btn sm primary" data-login>${t("editTree")}</button>`:""}
-     ${ME.acct&&ME.email.toLowerCase()!==SHARED_ADMIN_EMAIL.toLowerCase()&&!ME.pid&&memSeen&&!S.claims.has(id)&&(blood||D.spouseOf.has(id))&&!p.placeholder?`<button class="btn sm primary" data-claim="${esc(id)}">${t("itsMe")}</button>`:""}
+     ${ME.acct&&!ME.pid&&!ME.pend&&memSeen&&!S.claims.has(id)&&(blood||D.spouseOf.has(id))&&!p.placeholder?`<button class="btn sm primary" data-claim="${esc(id)}">${t("itsMe")}</button>`:""}
      ${ME.pid&&id===ME.pid&&D.blood.has(id)?`<button class="btn sm" data-moveparent>${t("moveParent")}</button>`:""}
      ${S.claims.has(id)?`<span class="chip">🔗 ${esc(id===ME.pid?t("itsYou"):t("claimed"))}</span>`:""}</div>
    ${par.length?`<div class="rel"><h4>${t("parents")}</h4><div class="plist">${par.map(x=>relRow(x)).join("")}</div></div>`:""}
@@ -1714,7 +1720,7 @@ function readPerson(pre="pf",base={}){
   if(o.surname) o.surname=o.surname.toUpperCase();
   o.sex=v("sex")||""; o.country=v("country")||""; o.birth=readDate(pre+"-bd");
   const dead=$("#"+pre+"-dead").checked; o.deceased=dead; o.death=dead?readDate(pre+"-dd"):"";
-  o.needsVerification=$("#"+pre+"-ver").checked; if(!o.needsVerification) o.verifyNote="";
+  const ver=$("#"+pre+"-ver"); if(ver){ o.needsVerification=ver.checked; if(!o.needsVerification) o.verifyNote="" } // the short form has no "to verify" box
   if(base.placeholder&&(o.given||o.surname!==base.surname)) o.placeholder=false;
   if(base.placeholder&&!o.given) o.given=base.given;
   return o }
@@ -1867,7 +1873,7 @@ function loginHTML(){
     ${c?"":`<button class="btn ghost sm" type="button" id="lg-forgot" style="align-self:flex-start;color:var(--accent)">${t("forgot")}</button>`}
     <button class="btn ghost sm" type="button" data-help style="align-self:flex-start;color:var(--accent)">? ${t("helpTitle")}</button>
   </form>` }
-function isAdminEmail(em){ em=(em||"").toLowerCase(); return em===ADMIN_EMAIL.toLowerCase()||em===SHARED_ADMIN_EMAIL.toLowerCase() }
+function isAdminEmail(em){ em=(em||"").toLowerCase(); return em===ADMIN_EMAIL.toLowerCase() }
 function authErr(e){ const c=e&&e.code||""; return c.includes("email-already")?t("errEmailUsed"):c.includes("weak-password")?t("errWeakPw"):c.includes("invalid-email")?t("errBadEmail"):c.includes("network")?t("errNet"):t("errLogin") }
 function bindLogin(){
   $$("[data-tab]").forEach(b=>b.onclick=()=>{ authTab=b.dataset.tab; drawSheet() });
@@ -1876,7 +1882,7 @@ function bindLogin(){
   $("#lgForm").onsubmit=async e=>{ e.preventDefault(); const c=authTab==="create"; const em=$("#lg-email").value.trim(), pw=$("#lg-pw").value;
     const btn=e.target.querySelector('[type="submit"]'); btn.disabled=true; $("#lg-err").textContent="";
     try{
-      if(c){ const name=$("#lg-name").value.trim(); if(!name){ btn.disabled=false; $("#lg-name").focus(); return } ME.name=name; LSX.set("name",name);
+      if(c){ const name=$("#lg-name").value.trim(); if(!name){ btn.disabled=false; $("#lg-name").focus(); return } ME.name=name; LSX.set("name",name); signupName=name;
         const cred=await auth.createUserWithEmailAndPassword(em,pw); try{ await cred.user.updateProfile({displayName:name}) }catch(x){}
         ME.id=cred.user.uid; ME.email=cred.user.email||em;
         closeSheet(); toast(t("accountMade")); if(!isAdminEmail(em)) pendingJoin=true; }
@@ -1893,6 +1899,7 @@ function joinHTML(){
   if(!ME.member) return sheetTop(t("joinTitle"))+`<form class="stack" id="jnCode"><h2>${t("codeTitle")}</h2><p style="margin:0">${esc(t("codeIntro"))}</p>
     <div class="field"><label for="jn-code">${t("codeL")}</label><input id="jn-code" autocomplete="off" autocapitalize="off" required></div>
     <p class="hint" id="jn-err" style="color:var(--danger);margin:0"></p><button class="btn primary" type="submit">${t("next")}</button></form>`;
+  if(ME.pend) return sheetTop(t("joinTitle"))+`<div class="stack"><p style="margin:0">${esc(t("pendTxt"))}</p><button class="btn primary" data-open="${esc(ME.pend)}">${t("myRecord")}</button></div>`;
   if(ME.pid) return sheetTop(t("joinTitle"))+`<p>${esc(t("claimDone"))}</p><button class="btn primary" data-open="${esc(ME.pid)}">${t("myRecord")}</button>`;
   if(J.claim){ const p=P_(J.claim); return sheetTop(t("whoTitle"))+`<div class="stack"><div class="card plist" style="overflow:hidden">${relRow(J.claim)}</div>
     <p style="margin:0;font-weight:700">${esc(t("claimQ",fullName(p)))}</p><p class="hint" id="jn-err" style="color:var(--danger);margin:0"></p>
@@ -1905,13 +1912,13 @@ function claimResults(q){ return searchPeople(q,{limit:10}).filter(id=>!P_(id).p
   return `<button class="res" ${taken?"disabled":""} data-pickme="${esc(id)}">${avatarHTML(id)}<span style="min-width:0"><span class="nm">${esc(fullName(P_(id)))}</span><br><span class="sub">${esc(taken?t("claimed"):subLine(id))}</span></span></button>` }).join("") }
 function bindJoin(){
   const f=$("#jnCode"); if(f){ setTimeout(()=>$("#jn-code").focus(),60); f.onsubmit=async e=>{ e.preventDefault(); const code=$("#jn-code").value.trim(); const btn=f.querySelector("button"); btn.disabled=true;
-      try{ await db.doc("members/"+ME.id).set({code,name:ME.name||"",email:ME.email||"",personId:"",createdAt:new Date().toISOString()}); ME.member={code,personId:""}; updateCan(); drawSheet() }
+      try{ await db.doc("members/"+ME.id).set({code,name:ME.name||"",email:ME.email||"",personId:"",approved:false,createdAt:new Date().toISOString()}); ME.member={code,personId:""}; updateCan(); drawSheet() }
       catch(err){ btn.disabled=false; $("#jn-err").textContent=err&&err.code==="permission-denied"?t("codeBad"):t("errNet") } }; return }
   const q=$("#jnq"); if(q){ const upd=()=>$("#jnres").innerHTML=claimResults(q.value); q.oninput=upd; upd(); setTimeout(()=>q.focus(),60);
     $("#jnres").onclick=e=>{ const b=e.target.closest("[data-pickme]"); if(b&&!b.disabled){ J.claim=b.dataset.pickme; drawSheet() } };
     $("#jnNew").onclick=()=>openWizard(null,"join") }
   const y=$("#jnYes"); if(y){ $("#jnNo").onclick=()=>{ J.claim=null; drawSheet() };
-    y.onclick=async()=>{ y.disabled=true; try{ await claimPerson(J.claim); toast(t("claimDone")); openProfile(J.claim) }catch(err){ y.disabled=false; $("#jn-err").textContent=err&&err.code==="permission-denied"?t("claimTaken"):t("errWrite") } } }
+    y.onclick=async()=>{ y.disabled=true; try{ await claimPerson(J.claim); toast(t(ME.pend?"pendSent":"claimDone")); openProfile(J.claim) }catch(err){ y.disabled=false; $("#jn-err").textContent=err&&err.code==="permission-denied"?t("claimTaken"):t("errWrite") } } }
 }
 async function claimPerson(pid){
   const b=db.batch(); b.update(db.doc("members/"+ME.id),{personId:pid}); b.set(db.doc("claims/"+pid),{uid:ME.id,at:new Date().toISOString()});
@@ -1922,8 +1929,9 @@ async function claimPerson(pid){
 /* ---------------- WIZARD ---------------- */
 let W=null;
 function openWizard(parentId,mode){ W={mode:mode||"add",step:parentId?2:1,parent:parentId||null,union:null,utype:"unspecified",me:null,sp:null,kids:[{n:"",y:""}]}; SH.open=true; SH.mode="wizard"; drawSheet() }
+function wizSteps(){ return W.mode==="move"?2:W.mode==="join"&&!ME.owner?3:5 } // a new member adds spouse and children once their link is confirmed
 function wizardHTML(){
-  const s=W.step; const nSteps=W.mode==="move"?2:5; const bar=`<div class="steps">${Array.from({length:nSteps},(_,i)=>`<i class="${i+1<=s?"on":""}"></i>`).join("")}</div>`;
+  const s=W.step; const nSteps=wizSteps(); const bar=`<div class="steps">${Array.from({length:nSteps},(_,i)=>`<i class="${i+1<=s?"on":""}"></i>`).join("")}</div>`;
   let body="";
   if(s===1) body=`<h2>${W.mode==="move"?t("moveTitle"):W.mode==="join"?t("wizJoin1"):t("wiz1")}</h2><p class="hint">${t("wiz1h")}</p><div class="find" style="box-shadow:none;border:1px solid var(--line-strong)">${ICONS.search}<input id="wzq" type="search" autocomplete="off" placeholder="${esc(t("findPh"))}"></div><div class="results" id="wzres"></div>
     ${W.mode==="add"?`<p class="hint" style="margin-top:8px"><b>${t("already")}</b> ${t("alreadyTxt")}</p>`:""}`;
@@ -1950,7 +1958,7 @@ function bindWizard(){
   $$("[data-kx]").forEach(b=>b.onclick=()=>{ captureWizard(); W.kids.splice(+b.dataset.kx,1); if(!W.kids.length) W.kids.push({n:"",y:""}); drawSheet() });
   const nx=$("#wzNext"); if(nx) nx.onclick=async()=>{ captureWizard();
     if(W.step===3&&!W.me.given&&!W.me.surname){ toast(t("needName")); return }
-    if(W.step<(W.mode==="move"?2:5)){ W.step++; return drawSheet() }
+    if(W.step<wizSteps()){ W.step++; return drawSheet() }
     nx.disabled=true; try{ await finishWizard() }catch(e){ nx.disabled=false } };
 }
 async function finishWizard(){
@@ -1964,7 +1972,7 @@ async function finishWizard(){
     try{ await b.commit(); toast(t("moved")); openProfile(me) }catch(e){ handleWriteErr(e); throw e } return }
   const me=newId("p");
   if(W.mode==="join"){ // create my own record, link it to my account and to my parent, in one step
-    const b=db.batch(); const rec=stamp(Object.assign(blankPerson(),W.me,{editorPids:[],createdBy:ME.id}));
+    const b=db.batch(); const rec=stamp(Object.assign(blankPerson(),W.me,{editorPids:[],createdBy:ME.id},ME.owner?{}:{needsVerification:true}));
     b.set(db.doc("people/"+me),rec); b.set(db.doc("claims/"+me),{uid:ME.id,at:now()}); b.update(db.doc("members/"+ME.id),{personId:me});
     if(W.union&&W.union!=="__new") b.update(db.doc("unions/"+W.union),{childIds:firebase.firestore.FieldValue.arrayUnion(me),editedBy:ME.name||"",updatedAt:now()});
     else b.set(db.doc("unions/"+newId("u")),stamp({partnerIds:[W.parent],childIds:[me],type:W.utype||"unspecified",needsVerification:false,deleted:false}));
@@ -1982,7 +1990,7 @@ async function finishWizard(){
   const hasSp=W.sp&&(W.sp.given||W.sp.surname);
   let spId=null; if(hasSp){ spId=newId("p"); W.sp.createdBy=ME.id||""; W.sp.editorPids=[me]; await writeDoc("people",spId,W.sp,"create") }
   if(spId||kidIds.length) await writeDoc("unions",newId("u"),{partnerIds:spId?[me,spId]:[me],childIds:kidIds,type:spId?(W.spType||"married"):"unspecified",needsVerification:false,deleted:false},"create");
-  toast(t("wizDone")); openProfile(me) }
+  toast(t(ME.pend?"pendSent":"wizDone")); openProfile(me) }
 
 /* ---------------- ADMIN ---------------- */
 async function renderAdmin(){
@@ -1994,6 +2002,7 @@ async function renderAdmin(){
   const desc=l=>{ const d=l.after||l.before||{}; const nm=l.col==="people"?fullName(d):l.col==="unions"?(t("unionOf")+" · "+((d.partnerIds||[]).map(x=>fullName(P_(x))).join(" & ")||"?")):t("siteText");
     const verb=!l.before?t("created"):(l.after&&l.after.deleted&&!(l.before&&l.before.deleted))?t("deletedV"):(l.before&&l.before.deleted&&l.after&&!l.after.deleted)?t("restoredV"):t("updated"); return {nm,verb} };
   const when=s=>{ try{ return new Date(s).toLocaleString(PREF.lang==="fr"?"fr-FR":"en-US",{dateStyle:"medium",timeStyle:"short"}) }catch(e){ return s } };
+  const mems=S.members.slice().sort((a,b)=>isPendM(b)-isPendM(a)), nPend=mems.filter(isPendM).length; // links awaiting confirmation first
   $("#main").innerHTML=`<div class="stack" style="gap:24px">
    <div><h2>${t("adminTitle")}</h2><p class="muted" style="margin:6px 0 0">${t("adminIntro")}</p><div class="row" style="margin-top:10px"><button class="btn sm primary" data-sugs>${esc(t("sugsPending",S.sugs.length))}</button><button class="btn sm" data-logout>${t("logout")}</button></div></div>
    <section class="card stack" style="padding:18px"><h3>${t("siteText")}</h3>
@@ -2005,7 +2014,7 @@ async function renderAdmin(){
    ${ME.master?`<section class="card stack" style="padding:18px"><h3>${t("famCode")}</h3><p class="hint" style="margin:0">${t("famCodeTxt")}</p>
      <div class="names">${S.codes.length?S.codes.map(c=>`<span class="chip" style="font-size:15px;padding:4px 12px">${esc(c)} <button class="btn sm ghost" data-delcode="${esc(c)}" aria-label="${t("remove")}" style="min-height:24px;padding:0 4px">✕</button></span>`).join(""):`<span class="hint" style="color:var(--danger)">${t("noCode")}</span>`}</div>
      <div class="row"><input class="inp" id="code-new" placeholder="${esc(t("codeNew"))}" style="flex:1;min-width:160px" autocapitalize="off"><button class="btn" id="code-add">${t("addCode")}</button></div></section>`:""}
-   <section class="stack" style="gap:10px"><h3>${t("members")} (${S.members.length})</h3>${ME.master?`<p class="hint" style="margin:0">${t("adminsNote")}</p>`:""}<div class="card" style="overflow:hidden">${S.members.length?S.members.map(m=>`<div class="logrow"><div class="main"><b>${esc(m.name||"—")}</b> ${(m.email||"").toLowerCase()===ADMIN_EMAIL.toLowerCase()?`<span class="chip verify">${t("masterBadge")}</span>`:S.admins.has(m._id)?`<span class="chip verify">${t("adminBadge")}</span>`:""} <span class="muted">${esc(m.email||"")}</span><div class="when">${m.personId&&P_(m.personId)?`🔗 <button class="btn sm ghost" data-open="${esc(m.personId)}" style="min-height:24px;padding:0;color:var(--accent)">${esc(fullName(P_(m.personId)))}</button>`:esc(t("notLinked"))}</div></div><div class="row" style="gap:6px;justify-content:flex-end">${ME.master&&(m.email||"").toLowerCase()!==ADMIN_EMAIL.toLowerCase()?`<button class="btn sm" data-admin="${esc(m._id)}" data-on="${S.admins.has(m._id)?"1":""}">${S.admins.has(m._id)?t("unAdmin"):t("makeAdmin")}</button>`:""}${m.personId?`<button class="btn sm" data-release="${esc(m._id)}" data-rpid="${esc(m.personId)}">${t("release")}</button>`:""}</div></div>`).join(""):`<div class="empty" style="border:0">${t("noMembers")}</div>`}</div></section>
+   <section class="stack" style="gap:10px"><h3>${t("members")} (${S.members.length})</h3>${nPend?`<p class="hint" style="margin:0;color:var(--verify);font-weight:700">${esc(t("pendCount",nPend))} — ${esc(t("pendAdminTxt"))}</p>`:""}${ME.master?`<p class="hint" style="margin:0">${t("adminsNote")}</p>`:""}<div class="card" style="overflow:hidden">${mems.length?mems.map(m=>`<div class="logrow" style="flex-wrap:wrap"><div class="main" style="flex:1 1 200px"><b>${esc(m.name||"—")}</b> ${(m.email||"").toLowerCase()===ADMIN_EMAIL.toLowerCase()?`<span class="chip verify">${t("masterBadge")}</span>`:S.admins.has(m._id)?`<span class="chip verify">${t("adminBadge")}</span>`:""}${isPendM(m)?` <span class="chip verify">${t("pendBadge")}</span>`:""} <span class="muted">${esc(m.email||"")}</span><div class="when">${m.personId&&P_(m.personId)?`🔗 <button class="btn sm ghost" data-open="${esc(m.personId)}" style="min-height:24px;padding:0;color:var(--accent)">${esc(fullName(P_(m.personId)))}</button>`:esc(t("notLinked"))}</div></div><div class="row" style="gap:6px;justify-content:flex-end">${ME.master&&(m.email||"").toLowerCase()!==ADMIN_EMAIL.toLowerCase()?`<button class="btn sm" data-admin="${esc(m._id)}" data-on="${S.admins.has(m._id)?"1":""}">${S.admins.has(m._id)?t("unAdmin"):t("makeAdmin")}</button>`:""}${isPendM(m)?`<button class="btn sm primary" data-approve="${esc(m._id)}" data-rpid="${esc(m.personId)}">${t("approve")}</button>`:""}${m.personId?`<button class="btn sm" data-release="${esc(m._id)}" data-rpid="${esc(m.personId)}">${isPendM(m)?t("refuse"):t("release")}</button>`:""}</div></div>`).join(""):`<div class="empty" style="border:0">${t("noMembers")}</div>`}</div></section>
    <section class="stack" style="gap:10px"><h3>${t("trash")}</h3><div class="card plist" style="overflow:hidden">${trashP.length||trashU.length?trashP.map(([id,p])=>`<div class="logrow"><div class="main"><b>${esc(fullName(p))}</b><div class="when">${esc(p.deletedAt?when(p.deletedAt):"")} · ${esc(whoName(p.deletedBy))}</div></div><button class="btn sm" data-restore="${esc(id)}">${t("restore")}</button></div>`).join("")+trashU.map(([id,u])=>`<div class="logrow"><div class="main"><b>${t("unionOf")} · ${esc((u.partnerIds||[]).map(x=>fullName(P_(x))).join(" & "))}</b></div><button class="btn sm" data-restoreu="${esc(id)}">${t("restore")}</button></div>`).join(""):`<div class="empty" style="border:0">${t("trashEmpty")}</div>`}</div></section>
    <section class="card stack" style="padding:18px"><h3>${t("backup")}</h3>
      <label class="check"><input type="checkbox" id="bk-photos" checked> ${t("inclPhotos")}</label>
@@ -2018,7 +2027,10 @@ async function renderAdmin(){
   $("#main").onclick=async e=>{
     const u=e.target.closest("[data-undo]"); if(u){ u.disabled=true; await undoLog(u.dataset.undo); return }
     const op=e.target.closest("[data-open]"); if(op) return openProfile(op.dataset.open);
-    const rl=e.target.closest("[data-release]"); if(rl){ rl.disabled=true; try{ const b=db.batch(); b.update(db.doc("members/"+rl.dataset.release),{personId:""}); b.delete(db.doc("claims/"+rl.dataset.rpid)); await b.commit(); toast(t("released")) }catch(err){ handleWriteErr(err); rl.disabled=false } return }
+    const ap=e.target.closest("[data-approve]"); if(ap){ ap.disabled=true; try{ await db.doc("members/"+ap.dataset.approve).update({approved:true,approvedBy:ME.id,approvedAt:new Date().toISOString()});
+        const pp=clone(P_(ap.dataset.rpid)); if(pp&&pp.needsVerification&&pp.createdBy===ap.dataset.approve){ pp.needsVerification=false; await writeDoc("people",ap.dataset.rpid,pp,"edit") }
+        toast(t("approvedT")) }catch(err){ handleWriteErr(err); ap.disabled=false } return }
+    const rl=e.target.closest("[data-release]"); if(rl){ rl.disabled=true; try{ const b=db.batch(); b.update(db.doc("members/"+rl.dataset.release),{personId:"",approved:false}); b.delete(db.doc("claims/"+rl.dataset.rpid)); await b.commit(); toast(t("released")) }catch(err){ handleWriteErr(err); rl.disabled=false } return }
     const ad=e.target.closest("[data-admin]"); if(ad){ ad.disabled=true; try{ if(ad.dataset.on) await db.doc("admins/"+ad.dataset.admin).delete(); else await db.doc("admins/"+ad.dataset.admin).set({at:new Date().toISOString(),by:ME.id}); toast(t("saved")) }catch(err){ handleWriteErr(err); ad.disabled=false } return }
     const dc=e.target.closest("[data-delcode]"); if(dc){ try{ await db.doc("codes/"+dc.dataset.delcode).delete() }catch(err){ handleWriteErr(err) } return }
     const r=e.target.closest("[data-restore]"); if(r){ const p=clone(P_(r.dataset.restore)); p.deleted=false; delete p.deletedAt; delete p.deletedBy; try{ await writeDoc("people",r.dataset.restore,p,"restore"); toast(t("restored")) }catch(err){} return }

@@ -1,0 +1,101 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function email() { return request.auth.token.get('email', ''); }
+    function isMaster() { return signedIn() && email() == 'jordankevinyonkeu@gmail.com'; }
+    function isAdmin() {
+      return signedIn() && (isMaster()
+        || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+    function memPath() { return /databases/$(database)/documents/members/$(request.auth.uid); }
+    function isMember() { return signedIn() && exists(memPath()); }
+    function isViewer() { return signedIn() && exists(/databases/$(database)/documents/viewers/$(request.auth.uid)); }
+    function canView() { return isAdmin() || isMember() || isViewer(); }
+    function myPid() { return get(memPath()).data.personId; }
+    function myPidAfter() { return getAfter(memPath()).data.personId; }
+    // A member's link to a person only gives edit rights once an admin has confirmed it (members/{uid}.approved).
+    function hasPid() { return isMember() && myPid() != "" && get(memPath()).data.get('approved', false) == true; }
+    function U(u) { return get(/databases/$(database)/documents/unions/$(u)).data; }
+    function ownsRecord(id, data) {
+      return id == myPid() || myPid() in data.get('editorPids', []) || data.get('createdBy', '') == request.auth.uid;
+    }
+    function viaOK(id, d) {
+      let v = d.get('_via', '');
+      let v2 = d.get('_via2', '');
+      return v != '' && (
+           (myPid() in U(v).childIds && (id in U(v).partnerIds || id in U(v).childIds))
+        || (myPid() in U(v).partnerIds && (id in U(v).childIds || id in U(v).partnerIds))
+        || (v2 != '' && id in U(v).partnerIds && myPid() in U(v2).childIds && U(v).childIds.hasAny(U(v2).partnerIds))
+        || (v2 != '' && id in U(v).childIds && myPid() in U(v2).partnerIds && U(v).partnerIds.hasAny(U(v2).childIds)));
+    }
+    function closeFamily(id) {
+      return hasPid() && (ownsRecord(id, get(/databases/$(database)/documents/people/$(id)).data) || viaOK(id, request.resource.data));
+    }
+    function onlyKeys(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+
+    match /people/{id} {
+      allow read: if canView();
+      allow create: if isAdmin() || (isMember() && request.resource.data.createdBy == request.auth.uid);
+      allow update: if isAdmin() || (hasPid()
+        && (ownsRecord(id, resource.data) || viaOK(id, request.resource.data))
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['editorPids', 'createdBy']));
+      allow delete: if isAdmin();
+    }
+    match /unions/{id} {
+      allow read: if canView();
+      allow create: if isAdmin() || (isMember() && (
+          (hasPid() && myPid() in request.resource.data.partnerIds)
+          || request.resource.data.childIds == [myPidAfter()]
+          || (hasPid() && request.resource.data.childIds.size() == 1
+              && closeFamily(request.resource.data.childIds[0]))));
+      allow update: if isAdmin() || (isMember() && (
+          (hasPid() && (myPid() in resource.data.partnerIds || resource.data.get('createdBy', '') == request.auth.uid)
+             && request.resource.data.partnerIds == resource.data.partnerIds)
+          || (onlyKeys(['childIds', 'editedBy', 'updatedAt']) && (
+               request.resource.data.childIds == resource.data.childIds.concat([myPidAfter()])
+               || (hasPid() && request.resource.data.childIds == resource.data.childIds.removeAll([myPid()]))))));
+      allow delete: if isAdmin();
+    }
+    match /viewers/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.code is string
+        && exists(/databases/$(database)/documents/codes/$(request.resource.data.code));
+      allow delete: if isAdmin();
+    }
+    match /members/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.personId == ""
+        && request.resource.data.get('approved', false) == false
+        && request.resource.data.code is string
+        && exists(/databases/$(database)/documents/codes/$(request.resource.data.code));
+      allow update: if isAdmin() || (signedIn() && request.auth.uid == uid
+        && resource.data.personId == ""
+        && onlyKeys(['personId'])
+        && getAfter(/databases/$(database)/documents/claims/$(request.resource.data.personId)).data.uid == uid);
+      allow delete: if isAdmin();
+    }
+    match /claims/{pid} {
+      allow read: if canView();
+      allow create: if isMember() && request.resource.data.uid == request.auth.uid
+        && myPid() == "" && myPidAfter() == pid;
+      allow delete: if isAdmin();
+    }
+    match /suggestions/{sid} {
+      allow create: if hasPid() && request.resource.data.by == request.auth.uid && request.resource.data.status == 'pending';
+      allow read: if isAdmin() || (signedIn() && resource.data.by == request.auth.uid)
+        || (hasPid() && resource.data.personId == myPid());
+      allow update: if isAdmin() || (hasPid() && resource.data.personId == myPid()
+        && onlyKeys(['status', 'decidedBy', 'decidedAt']));
+      allow delete: if isAdmin();
+    }
+    match /photos/{id}   { allow read: if canView(); allow write: if isAdmin() || closeFamily(id); }
+    match /contacts/{id} { allow read: if isAdmin() || isMember(); allow write: if isAdmin() || closeFamily(id); }
+    match /site/{id}     { allow read: if canView(); allow write: if isAdmin(); }
+    match /log/{id}      { allow create: if isAdmin() || isMember(); allow read, update, delete: if isAdmin(); }
+    match /codes/{code}  { allow read, write: if isMaster(); }
+    match /admins/{uid}  { allow read: if isMaster() || (signedIn() && request.auth.uid == uid); allow write: if isMaster(); }
+  }
+}
