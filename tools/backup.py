@@ -22,13 +22,18 @@ def cli_tokens():
         return json.load(f).get("tokens", {})
 
 
-def access_token():
+def access_token(force=False):
     t = cli_tokens()
-    if not t.get("access_token") or t.get("expires_at", 0) < (time.time() + 120) * 1000:
+    if force or not t.get("access_token") or t.get("expires_at", 0) < (time.time() + 120) * 1000:
         # Any CLI call that talks to Google refreshes the saved token.
         env = dict(os.environ, PATH="/usr/local/bin:/opt/homebrew/bin:" + os.environ.get("PATH", ""))
-        subprocess.run(["npx", "-y", "firebase-tools", "projects:list"], env=env,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=300)
+        try:
+            r = subprocess.run(["npx", "-y", "firebase-tools", "projects:list"], env=env, timeout=300,
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            if r.returncode:
+                print("Token refresh failed:", r.stdout.strip()[-400:], file=sys.stderr)
+        except (OSError, subprocess.SubprocessError) as e:
+            print("Token refresh failed:", e, file=sys.stderr)
         t = cli_tokens()
     if not t.get("access_token"):
         sys.exit("Not logged in to Firebase. Run: npx firebase-tools login")
@@ -87,12 +92,19 @@ def check():
 def main():
     if "--check" in sys.argv:
         return check()
-    token = access_token()
     now = datetime.datetime.now(datetime.timezone.utc)
     # Documents are kept in Firestore's own typed format so they can be restored exactly.
     data = {"project": PROJECT, "takenAt": now.isoformat(), "format": "firestore-rest-v1", "collections": {}}
-    for col in collection_ids(token):
-        data["collections"][col] = documents(col, token)
+    for attempt in (1, 2):
+        token = access_token(force=attempt == 2 or "MBEU_FORCE_REFRESH" in os.environ)
+        try:
+            for col in collection_ids(token):
+                data["collections"][col] = documents(col, token)
+            break
+        except urllib.error.HTTPError as e:
+            if e.code != 401 or attempt == 2:  # 401 = the saved token was stale: refresh it and try once more
+                raise
+            time.sleep(20)
     os.makedirs(OUT_DIR, mode=0o700, exist_ok=True)
     path = os.path.join(OUT_DIR, now.astimezone().strftime("backup-%Y-%m-%d-%H%M.json"))
     with open(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
@@ -100,7 +112,7 @@ def main():
     for old in sorted(glob.glob(os.path.join(OUT_DIR, "backup-*.json")))[:-KEEP]:
         os.remove(old)
     total = sum(len(d) for d in data["collections"].values())
-    print(f"Saved {total} documents to {path}")
+    print(f"{now.astimezone():%Y-%m-%d %H:%M} Saved {total} documents to {path}")
     for col, docs in data["collections"].items():
         print(f"  {col}: {len(docs)}")
 
@@ -109,4 +121,6 @@ if __name__ == "__main__":
     try:
         main()
     except urllib.error.HTTPError as e:
-        sys.exit(f"Backup failed: HTTP {e.code} {e.read().decode()[:300]}")
+        sys.exit(f"{datetime.datetime.now():%Y-%m-%d %H:%M} Backup failed: HTTP {e.code} {e.read().decode()[:300]}")
+    except urllib.error.URLError as e:
+        sys.exit(f"{datetime.datetime.now():%Y-%m-%d %H:%M} Backup failed: no connection ({e.reason})")
