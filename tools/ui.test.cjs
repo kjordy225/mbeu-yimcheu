@@ -78,6 +78,7 @@ const ok = (name, cond, extra) => { if (cond) { pass++; console.log("  ok   " + 
   ok("wizard has 3 steps for a new member", await b.locator("#sheet .steps i").count() === 3);
   await b.click("#wzNext");
   await b.fill("#pf-given", "Bob"); await b.fill("#pf-surname", "MBEU");
+  ok("ndap: offered in the short form", await b.locator("#pf-ndap").count() === 1);
   const btn = await b.locator("#wzNext").innerText();
   ok("step 3 is the last one", /Terminer|Finish/i.test(btn), btn);
   await shot(b, "3-bob-wizard");
@@ -123,6 +124,14 @@ const ok = (name, cond, extra) => { if (cond) { pass++; console.log("  ok   " + 
   await a.click('#sheet [data-mode="edit"]');
   await a.waitForSelector("#sheet form, #sheet [id^='pf-']", { timeout: 10000 });
   await shot(a, "6-alice-approved");
+  await a.fill("#pf-ndap", "Testndap"); await a.click("#shSave");
+  await a.waitForFunction(() => /Ndap\s*:\s*Testndap/.test(document.querySelector("#sheet").innerText), null, { timeout: 15000 });
+  ok("ndap: shown under the name after saving", true);
+  ok("ndap: saved in the database", (await get("people/pA")).ndap === "Testndap");
+  await shot(a, "7-alice-ndap");
+  await a.click("#sheet [data-close]"); await a.fill("#homeFind", "Testndap");
+  await a.waitForSelector('#homeRes [data-open="pA"]', { timeout: 10000 });
+  ok("ndap: search finds the person by ndap", true);
   await b.waitForFunction(() => !/attend la confirmation/.test(document.querySelector("#sheet").innerText + document.querySelector("#main").innerText), null, { timeout: 15000 });
   ok("Bob is back to 'not linked' and can try again", true);
 

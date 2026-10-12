@@ -430,7 +430,7 @@ const T = {
   canEditHint:"Vous pouvez modifier votre fiche, celle de votre conjoint et celles de vos enfants.",
   secIdentity:"Identité",secBirth:"Naissance",secHome:"Où vit-il / elle aujourd’hui",secLife:"Vie et origines",secDeath:"Décès",secStory:"Histoire et souvenirs",secContact:"Contact (privé)",
   birthPlaceCity:"Lieu de naissance (ville, village)",birthCountry:"Pays de naissance",residenceCity:"Ville de résidence",occupation:"Profession",education:"Études, diplômes",
-  originVillage:"Village / chefferie d’origine",languages:"Langues parlées",baptism:"Baptême",baptismPlace:"Lieu du baptême (paroisse)",burialPlace:"Lieu d’inhumation",
+  ndap:"Ndap (nom d’éloge)",ndapShort:"Ndap",originVillage:"Village / chefferie d’origine",languages:"Langues parlées",baptism:"Baptême",baptismPlace:"Lieu du baptême (paroisse)",burialPlace:"Lieu d’inhumation",
   bioPh:"Un souvenir, un trait de caractère, son parcours…",completeLabel:n=>`Fiche complétée à ${n} %`,
   unionEdit:"Modifier l’union",marriageDate:"Date du mariage / de l’union",marriagePlace:"Lieu du mariage",unionEnd:"Fin de l’union (séparation, veuvage)",
   grandparents:"Grands-parents",addParents:"Ajouter ses parents",addParentsOf:n=>`Ajouter les parents de ${n}`,father:"Père",mother:"Mère",
@@ -536,7 +536,7 @@ Tu peux regarder l’arbre, puis créer ton compte pour ajouter tes informations
   canEditHint:"You can edit your record, your spouse’s and your children’s.",
   secIdentity:"Identity",secBirth:"Birth",secHome:"Where they live today",secLife:"Life and origins",secDeath:"Death",secStory:"Story and memories",secContact:"Contact (private)",
   birthPlaceCity:"Place of birth (town, village)",birthCountry:"Country of birth",residenceCity:"City of residence",occupation:"Occupation",education:"Education, degrees",
-  originVillage:"Home village / chiefdom",languages:"Languages spoken",baptism:"Baptism",baptismPlace:"Place of baptism (parish)",burialPlace:"Place of burial",
+  ndap:"Ndap (praise name)",ndapShort:"Ndap",originVillage:"Home village / chiefdom",languages:"Languages spoken",baptism:"Baptism",baptismPlace:"Place of baptism (parish)",burialPlace:"Place of burial",
   bioPh:"A memory, a character trait, their life path…",completeLabel:n=>`Record ${n}% complete`,
   unionEdit:"Edit the union",marriageDate:"Date of marriage / union",marriagePlace:"Place of marriage",unionEnd:"End of union (separation, widowhood)",
   grandparents:"Grandparents",addParents:"Add their parents",addParentsOf:n=>`Add ${n}’s parents`,father:"Father",mother:"Mother",
@@ -885,7 +885,7 @@ function searchPeople(q,{bloodOnly=false,limit=8}={}){
   const n=norm(q).trim(); if(!n) return [];
   const parts=n.split(/\s+/); const out=[];
   for(const [id,p] of S.people){ if(p.deleted) continue; if(bloodOnly&&!D.blood.has(id)) continue; if(!D.blood.has(id)&&!D.spouseOf.has(id)) continue;
-    const hay=norm([p.surname,p.given,p.birthName,p.marriedName,p.otherNames].join(" "));
+    const hay=norm([p.surname,p.given,p.birthName,p.marriedName,p.otherNames,p.ndap].join(" "));
     if(parts.every(x=>hay.includes(x))){ const score=(norm(p.given).startsWith(parts[0])?0:1)+(D.blood.has(id)?0:2); out.push([score,id]) } }
   return out.sort((a,b)=>a[0]-b[0]||fullName(P_(a[1])).localeCompare(fullName(P_(b[1])))).slice(0,limit).map(x=>x[1]);
 }
@@ -1000,7 +1000,7 @@ function drawDirList(){
     if(DIRF.gen!==""&&(!blood||String(D.gen.get(id))!==String(DIRF.gen))) return false;
     if(DIRF.country==="none"&&p.country) return false; if(DIRF.country&&DIRF.country!=="none"&&p.country!==DIRF.country) return false;
     if(DIRF.status==="living"&&isDead(p)) return false; if(DIRF.status==="dead"&&!isDead(p)) return false;
-    if(q.length){const hay=norm([p.surname,p.given,p.birthName,p.marriedName,p.otherNames].join(" ")); if(!q.every(x=>hay.includes(x))) return false}
+    if(q.length){const hay=norm([p.surname,p.given,p.birthName,p.marriedName,p.otherNames,p.ndap].join(" ")); if(!q.every(x=>hay.includes(x))) return false}
     return true });
   ids.sort((a,b)=>{const ga=D.gen.has(a)?D.gen.get(a):9, gb=D.gen.has(b)?D.gen.get(b):9; const ba=D.branch.get(a)??99, bb=D.branch.get(b)??99; return ba-bb||ga-gb||norm(fullName(P_(a))).localeCompare(norm(fullName(P_(b))))});
   $("#dcount").textContent=`${ids.length} ${t("people")}`;
@@ -1461,7 +1461,7 @@ function bindInvite(){ $("#inv-copy").onclick=async()=>{ const v=$("#inv-txt").v
   const sh=$("#inv-share"); if(sh) sh.onclick=()=>navigator.share({text:$("#inv-txt").value}).catch(()=>{}) }
 
 /* ---------------- SUGGESTIONS ---------------- */
-const SUG_KEYS=[["surname","surname"],["given","given"],["birthName","birthName"],["marriedName","marriedName"],["otherNames","otherNames"],["sex","sex"],["birth","birthDate"],["birthPlace","birthPlaceCity"],["birthCountry","birthCountry"],["residenceCity","residenceCity"],["country","country"],["occupation","occupation"],["education","education"],["originVillage","originVillage"],["languages","languages"],["baptismDate","baptism"],["baptismPlace","baptismPlace"],["deceased","isDeceasedShort"],["death","deathDate"],["deathPlace","deathPlace"],["burialPlace","burialPlace"],["bio","bio"],["tribute","tribute"]];
+const SUG_KEYS=[["surname","surname"],["given","given"],["birthName","birthName"],["marriedName","marriedName"],["otherNames","otherNames"],["ndap","ndap"],["sex","sex"],["birth","birthDate"],["birthPlace","birthPlaceCity"],["birthCountry","birthCountry"],["residenceCity","residenceCity"],["country","country"],["occupation","occupation"],["education","education"],["originVillage","originVillage"],["languages","languages"],["baptismDate","baptism"],["baptismPlace","baptismPlace"],["deceased","isDeceasedShort"],["death","deathDate"],["deathPlace","deathPlace"],["burialPlace","burialPlace"],["bio","bio"],["tribute","tribute"]];
 let sugUnsub=null; S.sugs=[];
 function subscribeSuggestions(){ if(sugUnsub){ sugUnsub(); sugUnsub=null } S.sugs=[]; if(S.access!=="ok"||!db) return;
   let q=null; if(ME.owner) q=db.collection("suggestions").where("status","==","pending").limit(200);
@@ -1552,6 +1552,7 @@ async function makeLivret(o){
     if(born) lines.push((p.sex==="F"?L("Née ","Born "):L("Né ","Born "))+born);
     if(p.baptismDate||p.baptismPlace) lines.push((p.sex==="F"?L("Baptisée ","Baptized "):L("Baptisé ","Baptized "))+[p.baptismDate?on(p.baptismDate):"",p.baptismPlace?L("à ","in ")+p.baptismPlace:""].filter(Boolean).join(" "));
     if(!isDead(p)&&(p.residenceCity||p.country)) lines.push(L("Réside à ","Lives in ")+[p.residenceCity,p.country?cname(p.country):""].filter(Boolean).join(", "));
+    if(p.ndap) lines.push(t("ndapShort")+" : "+p.ndap);
     if(p.occupation) lines.push(t("occupation")+" : "+p.occupation);
     if(p.education) lines.push(t("education")+" : "+p.education);
     if(p.originVillage) lines.push(t("originVillage")+" : "+p.originVillage);
@@ -1638,6 +1639,7 @@ function profileHTML(id){
   <div class="stack" style="gap:20px">
    <div class="pf-head">${SH.photo?`<span class="av lg ${brClass(id)}"><img alt="" src="${esc(SH.photo)}"></span>`:avatarHTML(id,"lg")}
      <div style="min-width:0"><div class="pf-name">${p.surname?`<small>${esc(p.surname)}</small>`:""}${esc(p.placeholder?p.given:(p.given||(p.surname?t("firstUnknown"):"—")))}</div>
+     ${p.ndap?`<div class="pf-alt"><b>${t("ndapShort")}</b> : ${esc(p.ndap)}</div>`:""}
      ${altNames(p)?`<div class="pf-alt">${esc(altNames(p))}</div>`:""}
      <div class="row" style="gap:6px;margin-top:8px">${chipsHTML(id)}${isMine?`<span class="chip">${t("itsYou")}</span>`:""}</div>
      ${cw&&!p.placeholder?`<div style="margin-top:10px">${meterHTML(p)}</div>`:""}</div></div>
@@ -1687,7 +1689,7 @@ function personFormHTML(p,{full=false,pre="pf",compact=false,contact=true}={}){
   const sec=(title,body,open=true)=>`<fieldset class="fsec"><legend>${title}</legend><div class="stack" style="gap:14px">${body}</div></fieldset>`;
   const sexSel=`<div class="field"><label for="${pre}-sex">${t("sex")}</label><select id="${pre}-sex"><option value="">${t("sexU")}</option><option value="F" ${p.sex==="F"?"selected":""}>${t("sexF")}</option><option value="M" ${p.sex==="M"?"selected":""}>${t("sexM")}</option></select></div>`;
   const ident=`<div class="grid2">${f("surname",t("surname"),p.surname,"text",'autocapitalize="characters" autocomplete="off"')}${f("given",t("given"),p.placeholder?"":p.given,"text",'autocomplete="off"')}</div>
-     ${compact?sexSel:`<div class="grid2">${f("birthName",t("birthName"),p.birthName)}${f("marriedName",t("marriedName"),p.marriedName)}</div><div class="grid2">${f("otherNames",t("otherNames"),p.otherNames)}${sexSel}</div>`}`;
+     ${compact?`<div class="grid2">${f("ndap",t("ndap"),p.ndap,"text",'autocomplete="off"')}${sexSel}</div>`:`<div class="grid2">${f("birthName",t("birthName"),p.birthName)}${f("marriedName",t("marriedName"),p.marriedName)}</div><div class="grid2">${f("ndap",t("ndap"),p.ndap,"text",'autocomplete="off"')}${f("otherNames",t("otherNames"),p.otherNames)}</div>${sexSel}`}`;
   const birth=`<div class="field"><span class="flabel">${t("birthDate")}</span>${dateInputs(pre+"-bd",p.birth)}<span class="hint">${t("dateHint")}</span></div>
      <div class="grid2">${f("birthPlace",t("birthPlaceCity"),p.birthPlace)}<div class="field"><label for="${pre}-birthCountry">${t("birthCountry")}</label><select id="${pre}-birthCountry">${countryOptions(p.birthCountry)}</select></div></div>`;
   const home=`<div class="grid2">${f("residenceCity",t("residenceCity"),p.residenceCity)}<div class="field"><label for="${pre}-country">${t("country")}</label><select id="${pre}-country">${countryOptions(p.country)}</select></div></div>`;
@@ -1715,7 +1717,7 @@ function personFormHTML(p,{full=false,pre="pf",compact=false,contact=true}={}){
 function readPerson(pre="pf",base={}){
   const v=id=>{const el=$("#"+pre+"-"+id); return el?el.value.trim():undefined};
   const o=Object.assign({},base);
-  ["surname","given","birthName","marriedName","otherNames","birthPlace","deathPlace","burialPlace","residenceCity","occupation","education","originVillage","languages","baptismPlace","phone","email","verifyNote","bio","tribute"].forEach(k=>{const x=v(k); if(x!==undefined) o[k]=x});
+  ["surname","given","birthName","marriedName","otherNames","ndap","birthPlace","deathPlace","burialPlace","residenceCity","occupation","education","originVillage","languages","baptismPlace","phone","email","verifyNote","bio","tribute"].forEach(k=>{const x=v(k); if(x!==undefined) o[k]=x});
   const bc=v("birthCountry"); if(bc!==undefined) o.birthCountry=bc; if($("#"+pre+"-bap-y")) o.baptismDate=readDate(pre+"-bap");
   if(o.surname) o.surname=o.surname.toUpperCase();
   o.sex=v("sex")||""; o.country=v("country")||""; o.birth=readDate(pre+"-bd");
@@ -1727,7 +1729,7 @@ function readPerson(pre="pf",base={}){
 const COMPLETE_KEYS=["given","surname","sex","birth","birthPlace","country","residenceCity","occupation","originVillage","thumb","bio"];
 function completeness(p){ if(!p) return 0; const keys=COMPLETE_KEYS.concat(isDead(p)?["death","deathPlace"]:[]); const n=keys.filter(k=>p[k]&&String(p[k]).trim()).length; return Math.round(n/keys.length*100) }
 function meterHTML(p){ const c=completeness(p); return `<div class="meter" title="${c}%"><div class="meter-bar"><i style="width:${c}%"></i></div><span>${esc(t("completeLabel",c))}</span></div>` }
-function blankPerson(){ return {editorPids:[],createdBy:"",surname:"",given:"",sex:"",birthName:"",marriedName:"",otherNames:"",birth:"",birthPlace:"",death:"",deathPlace:"",deceased:false,country:"",thumb:"",bio:"",tribute:"",needsVerification:false,verifyNote:"",placeholder:false,raisedBy:[],deleted:false} }
+function blankPerson(){ return {editorPids:[],createdBy:"",surname:"",given:"",sex:"",birthName:"",marriedName:"",otherNames:"",ndap:"",birth:"",birthPlace:"",death:"",deathPlace:"",deceased:false,country:"",thumb:"",bio:"",tribute:"",needsVerification:false,verifyNote:"",placeholder:false,raisedBy:[],deleted:false} }
 function childFormHTML(pid){
   const us=D.unionsOf.get(pid)||[];
   return `<div class="stack" style="gap:16px">
