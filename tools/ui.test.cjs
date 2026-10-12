@@ -29,6 +29,12 @@ const ok = (name, cond, extra) => { if (cond) { pass++; console.log("  ok   " + 
   await put("people/pF", P("Fondateur", "M")); await put("people/pM", P("Fondatrice", "F"));
   await put("people/pA", P("Alice", "F")); await put("people/pB", P("Bruno", "M"));
   await put("unions/u0", { partnerIds: ["pF", "pM"], childIds: ["pA", "pB"], type: "married", deleted: false });
+  // three generations, for the family view: Alice + Sam -> Kira, Karl; Kira -> Gina; Bruno -> Cyril
+  await put("people/pS", Object.assign(P("Sam", "M"), { surname: "SPOUSE" })); await put("people/pK1", P("Kira", "F")); await put("people/pK2", P("Karl", "M"));
+  await put("people/pG", P("Gina", "F")); await put("people/pC", P("Cyril", "M"));
+  await put("unions/uA", { partnerIds: ["pA", "pS"], childIds: ["pK1", "pK2"], type: "married", deleted: false });
+  await put("unions/uK", { partnerIds: ["pK1"], childIds: ["pG"], type: "unspecified", deleted: false });
+  await put("unions/uB", { partnerIds: ["pB"], childIds: ["pC"], type: "unspecified", deleted: false });
 
   const browser = await chromium.launch({ channel: "chrome", headless: true });
   async function open(label) {
@@ -134,6 +140,44 @@ const ok = (name, cond, extra) => { if (cond) { pass++; console.log("  ok   " + 
   ok("ndap: search finds the person by ndap", true);
   await b.waitForFunction(() => !/attend la confirmation/.test(document.querySelector("#sheet").innerText + document.querySelector("#main").innerText), null, { timeout: 15000 });
   ok("Bob is back to 'not linked' and can try again", true);
+
+  console.log("G. A family's own view: tree, downloads and book");
+  const v = await open("viewer");
+  await v.fill("#gate-code", "FAMCODE"); await v.click('#gateForm button[type="submit"]'); await v.waitForSelector("#homeFind", { timeout: 15000 });
+  await v.evaluate(() => { window.__saved = []; window.saveFile = (n, d) => { window.__saved.push({ n, d }) } });
+  const saved = async (page, re) => { await page.waitForFunction(r => window.__saved.some(x => new RegExp(r).test(x.n)), re, { timeout: 60000 });
+    return page.evaluate(async r => { const x = window.__saved.find(x => new RegExp(r).test(x.n)); const buf = new Uint8Array(await x.d.arrayBuffer()); let bin = ""; for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000)); return { n: x.n, size: buf.length, b64: btoa(bin) } }, re) };
+  const keep = (f, r) => fs.writeFileSync(path.join(OUT, f), Buffer.from(r.b64, "base64"));
+  await v.evaluate(() => openProfile("pA"));
+  await v.click('#sheet [data-famtree="pA"]');
+  await v.waitForFunction(() => { const n = document.querySelector("#famNote"); return n && !n.hidden && /Famille de MBEU Alice et SPOUSE Sam/.test(n.innerText) }, null, { timeout: 15000 });
+  ok("profile button opens the tree on that family", true);
+  const note = await v.locator("#famNote").innerText();
+  ok("the banner says where the family sits", /1er enfant sur \d de MBEU Fondateur et MBEU Fondatrice/.test(note), note);
+  ok("the tree shows the family (children, grandchild)", await v.locator('#troot [data-pid="pK1"]').count() > 0 && await v.locator('#troot [data-pid="pG"]').count() > 0);
+  ok("…and not the other branches", await v.locator('#troot [data-pid="pB"]').count() === 0 && await v.locator('#troot [data-pid="pC"]').count() === 0);
+  ok("the selector shows the family and lists the branches", await v.evaluate(() => { const s = document.querySelector("#rootSel"); return s.value === "p:pA" && [...s.options].some(o => /^1\. MBEU Alice/.test(o.text)) }));
+  await shot(v, "8-family-tree");
+  await v.evaluate(() => exportTree("png")); const png = await saved(v, "\\.png$"); keep("family-tree.png", png);
+  ok("tree image is named after the family", /^arbre-famille-de-mbeu-alice-et-spouse-sam\.png$/.test(png.n) && png.size > 5000, png.n + " " + png.size);
+  await v.evaluate(() => exportTree("pdf")); const tpdf = await saved(v, "^arbre-.*\\.pdf$");
+  ok("tree PDF downloads", tpdf.size > 5000, tpdf.n + " " + tpdf.size);
+  await v.evaluate(() => openLivret());
+  ok("the book offers this family by default", await v.evaluate(() => { const r = document.querySelector('input[name="lvs"]:checked'); return r && r.value === "focus" }));
+  await v.click("#lv-go"); const book = await saved(v, "^livret-"); keep("family-book.pdf", book);
+  const txt = Buffer.from(book.b64, "base64").toString("latin1");
+  ok("book is named after the family", book.n === "livret-test-mbeu-alice.pdf", book.n);
+  ok("book: 'our place in the family' page", /Notre place dans la famille/.test(txt));
+  ok("book: rank among the parents' children", /MBEU Alice, 1er enfant sur \d de MBEU Fondateur et MBEU Fondatrice/.test(txt));
+  ok("book: brother listed with his children", /Fr.re : MBEU Bruno - 1 enfant/.test(txt), (txt.match(/MBEU Bruno[^)]{0,40}/) || [""])[0]);
+  ok("book: the family's own members are in it", /Kira/.test(txt) && /Gina/.test(txt));
+  ok("book: other branches' descendants are not given a record", !/MBEU Cyril/.test(txt));
+  await v.evaluate(() => { window.__saved = []; return makeLivret({ scope: "fam", person: "pK1", tree: true, photos: true, prog: document.createElement("p") }) });
+  const book2 = await saved(v, "^livret-"); const txt2 = Buffer.from(book2.b64, "base64").toString("latin1");
+  ok("grandchild's book: grandparents, uncle and cousin count", /Grands-parents/.test(txt2) && /Oncle : MBEU Bruno - 1 enfant/.test(txt2) && /1 cousin ou cousine/.test(txt2) && /2e enfant|1er enfant sur 2 de MBEU Alice et SPOUSE Sam/.test(txt2), (txt2.match(/Oncle[^)]{0,60}/) || [""])[0]);
+  await v.click("#sheet [data-close]"); await v.click("#famAll");
+  await v.waitForFunction(() => document.querySelector("#famNote").hidden && document.querySelector('#troot [data-pid="pB"], #rootSel'), null, { timeout: 15000 });
+  ok("'whole family' goes back to the full tree", await v.evaluate(() => TREE_ROOT === null && document.querySelector("#rootSel").value === ""));
 
   console.log("E. No script errors");
   ok("no page errors", errors.length === 0, errors.join(" | "));

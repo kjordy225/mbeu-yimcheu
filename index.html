@@ -461,8 +461,8 @@ Tu peux regarder l’arbre, puis créer ton compte pour ajouter tes informations
   q5:"Comment installer le site comme une application ?",a5:"iPhone : dans Safari, bouton Partager puis « Sur l’écran d’accueil ». Android : menu ⋮ puis « Installer l’application » ou « Ajouter à l’écran d’accueil ».",
   cropHint:"Faites glisser et zoomez pour placer le visage dans le cercle.",usePhoto:"Utiliser cette photo",reCrop:"Recadrer le visage",
   download:"Télécharger",pdfTree:"Arbre (PDF)",pngTree:"Arbre (image)",livret:"Livret de famille (PDF)",livretIntro:"Un livret à imprimer ou à partager : chaque personne avec ses dates, lieux, unions et enfants. Plus les fiches sont complètes, plus le livret est riche.",
-  livretScope:"Contenu",livretAll:"Toute la famille",livretBranch:"Une seule branche",livretMine:"Ma famille (moi et mes descendants)",livretTree:"Inclure l’arbre",livretPhotos:"Inclure les photos",livretGo:"Créer le livret",
-  layoutCols:"Colonnes",lineage:"Lignée",
+  livretScope:"Contenu",livretAll:"Toute la famille",livretBranch:"Une seule branche",livretMine:"Ma famille",livretTree:"Inclure l’arbre",livretPhotos:"Inclure les photos",livretGo:"Créer le livret",
+  layoutCols:"Colonnes",lineage:"Lignée",myFam:"Ma famille",wholeFam:"Toute la famille",famTree:"Arbre de sa famille",
   makeAdmin:"Nommer admin",unAdmin:"Retirer admin",adminBadge:"Admin",masterBadge:"Clé maîtresse",adminsNote:"Seule la clé maîtresse peut nommer ou retirer des administrateurs.",
   members:"Membres inscrits",noMembers:"Aucun membre pour l’instant.",release:"Délier",released:"Compte délié de la fiche",notLinked:"pas encore relié",
   famCode:"Code de la famille",famCodeTxt:"Le code que les proches doivent entrer pour modifier l’arbre.",codeSet:"Code enregistré",codeNew:"Nouveau code",addCode:"Ajouter ce code",noCode:"Aucun code : personne ne peut rejoindre l’arbre.",
@@ -567,8 +567,8 @@ You can look at the tree, then create your account to add your information and y
   q5:"How do I install the site as an app?",a5:"iPhone: in Safari, tap Share then “Add to Home Screen”. Android: menu ⋮ then “Install app” or “Add to Home screen”.",
   cropHint:"Drag and zoom to place the face inside the circle.",usePhoto:"Use this photo",reCrop:"Re-crop the face",
   download:"Download",pdfTree:"Tree (PDF)",pngTree:"Tree (image)",livret:"Family book (PDF)",livretIntro:"A book to print or share: every person with their dates, places, unions and children. The more complete the records, the richer the book.",
-  livretScope:"Content",livretAll:"The whole family",livretBranch:"One branch",livretMine:"My family (me and my descendants)",livretTree:"Include the tree",livretPhotos:"Include photos",livretGo:"Create the book",
-  layoutCols:"Columns",lineage:"Lineage",
+  livretScope:"Content",livretAll:"The whole family",livretBranch:"One branch",livretMine:"My family",livretTree:"Include the tree",livretPhotos:"Include photos",livretGo:"Create the book",
+  layoutCols:"Columns",lineage:"Lineage",myFam:"My family",wholeFam:"Whole family",famTree:"Their family’s tree",
   makeAdmin:"Make admin",unAdmin:"Remove admin",adminBadge:"Admin",masterBadge:"Master key",adminsNote:"Only the master key can name or remove administrators.",
   members:"Registered members",noMembers:"No members yet.",release:"Unlink",released:"Account unlinked from the record",notLinked:"not linked yet",
   famCode:"Family code",famCodeTxt:"The code relatives must enter to edit the tree.",codeSet:"Code saved",codeNew:"New code",addCode:"Add this code",noCode:"No code: nobody can join the tree.",
@@ -610,12 +610,16 @@ function derive(altRoot){
   for(const [uid,u] of U){ if(u.deleted) continue;
     for(const pid of (u.partnerIds||[])){ if(!live(pid)) continue; if(!unionsOf.has(pid)) unionsOf.set(pid,[]); unionsOf.get(pid).push(uid); }
     for(const c of (u.childIds||[])){ if(!parentUnions.has(c)) parentUnions.set(c,[]); parentUnions.get(c).push(uid); } }
-  const site=S.site||{}; const alt=altRoot&&U.get(altRoot)&&!U.get(altRoot).deleted?altRoot:null;
-  const founders=alt?(U.get(alt).partnerIds||[]).filter(live):(site.founders||[]).filter(live);
+  const site=S.site||{};
+  // altRoot: a union id (another lineage), or "p:"+person id for that person's own family (them, their spouse, their descendants)
+  const fp=typeof altRoot==="string"&&altRoot.startsWith("p:")&&live(altRoot.slice(2))?altRoot.slice(2):null;
+  const fpU=fp?(unionsOf.get(fp)||[]):[]; const fpSp=fpU.length===1?(U.get(fpU[0]).partnerIds||[]).filter(x=>x!==fp&&live(x)).slice(0,1):[];
+  const alt=!fp&&altRoot&&U.get(altRoot)&&!U.get(altRoot).deleted?altRoot:null;
+  const founders=fp?[fp,...fpSp]:alt?(U.get(alt).partnerIds||[]).filter(live):(site.founders||[]).filter(live);
   const gen=new Map(),branch=new Map(),blood=new Set(),heads=[];
   founders.forEach(f=>{blood.add(f);gen.set(f,0);branch.set(f,-1)});
   const q=[]; let bi=0;
-  const fUnions=[]; if(alt) fUnions.push(alt); else { if(site.rootUnion&&U.get(site.rootUnion)&&!U.get(site.rootUnion).deleted) fUnions.push(site.rootUnion);
+  const fUnions=[]; if(fp) fUnions.push(...fpU); else if(alt) fUnions.push(alt); else { if(site.rootUnion&&U.get(site.rootUnion)&&!U.get(site.rootUnion).deleted) fUnions.push(site.rootUnion);
   founders.forEach(f=>(unionsOf.get(f)||[]).forEach(u=>{if(!fUnions.includes(u)) fUnions.push(u)})); }
   for(const uid of fUnions){ for(const c of (U.get(uid).childIds||[])){ const b=bi++; if(!live(c)||blood.has(c)) continue;
       blood.add(c);gen.set(c,1);branch.set(c,b%11);heads.push(c);q.push(c);} }
@@ -625,7 +629,7 @@ function derive(altRoot){
   // spouses inherit their partner's branch for colour
   const spouseOf=new Map();
   for(const pid of blood) for(const uid of (unionsOf.get(pid)||[])) for(const o of U.get(uid).partnerIds||[]){ if(o!==pid&&live(o)&&!blood.has(o)&&!spouseOf.has(o)){spouseOf.set(o,pid); if(!branch.has(o)) branch.set(o,branch.get(pid));} }
-  D={live,unionsOf,parentUnions,founders,fUnions,gen,branch,blood,heads,spouseOf,alt};
+  D={live,unionsOf,parentUnions,founders,fUnions,gen,branch,blood,heads,spouseOf,alt,focus:fp};
 }
 function lineages(){ // founding couples: unions whose partners have no recorded parents
   const out=[]; const main=(S.site||{}).rootUnion; const live=id=>{const p=P_(id);return !!p&&!p.deleted};
@@ -636,6 +640,41 @@ function lineages(){ // founding couples: unions whose partners have no recorded
     out.push({uid,name:name||"?"}) }
   return out.sort((a,b)=>a.name.localeCompare(b.name)) }
 const P_=id=>S.people.get(id);
+/* ---- one family's own view: the tree and the book start from one person, and the rest of the family is described from where they stand ---- */
+function famHead(){ return TREE_ROOT&&TREE_ROOT.startsWith("p:")&&P_(TREE_ROOT.slice(2))?TREE_ROOT.slice(2):null }
+function hasKids(pid){ return (D.unionsOf.get(pid)||[]).some(u=>kidsOf(u).length>0) }
+function myFamHead(){ if(!ME.pid||!P_(ME.pid)) return null; const par=parentsOf(ME.pid); return hasKids(ME.pid)?ME.pid:(par.find(x=>D.blood.has(x))||par[0]||ME.pid) } // no children yet: the family I grew up in
+function famTitle(pid){ const fr=PREF.lang==="fr"; const us=D.unionsOf.get(pid)||[]; const sp=us.length===1?partnersOf(us[0],pid).slice(0,1):[];
+  return (fr?"Famille de ":"Family of ")+[pid,...sp].map(x=>fullName(P_(x))).join(fr?" et ":" and ") }
+function ordinal(n){ return PREF.lang==="fr"?(n===1?"1er":n+"e"):n+(n%10===1&&n%100!==11?"st":n%10===2&&n%100!==12?"nd":n%10===3&&n%100!==13?"rd":"th") }
+function famPlace(pid){ // where this person stands among their parents' children, e.g. "11e enfant sur 11 de A et B"
+  const fr=PREF.lang==="fr";
+  for(const u of (D.parentUnions.get(pid)||[])){ const x=S.unions.get(u); if(!x||x.deleted) continue; const par=partnersOf(u), k=kidsOf(u), i=k.indexOf(pid); if(!par.length||i<0) continue;
+    const names=par.map(z=>fullName(P_(z))).join(fr?" et ":" and ");
+    return k.length===1?(fr?"enfant unique de ":"only child of ")+names:fr?`${ordinal(i+1)} enfant sur ${k.length} de ${names}`:`${ordinal(i+1)} of the ${k.length} children of ${names}` }
+  return "" }
+function famLens(pid){ // the wider family seen from this person: [heading, lines][]
+  const fr=PREF.lang==="fr", L=(a,b)=>fr?a:b, and=L(" et "," and "), out=[]; const nm=x=>fullName(P_(x));
+  const yrs=x=>{ const y=lifeSpan(P_(x),true); return y?" ("+y+")":"" };
+  const kidsN=x=>(D.unionsOf.get(x)||[]).reduce((n,u)=>n+kidsOf(u).length,0);
+  const tail=x=>{ const k=kidsN(x), d=descCount(x); return k?` - ${k} ${L(k>1?"enfants":"enfant",k>1?"children":"child")}${d>k?`, ${d} descendants`:""}`:"" };
+  const word=(x,m,f,u)=>{ const sx=P_(x).sex; return sx==="M"?m:sx==="F"?f:u };
+  const sibW=x=>word(x,L("Frère","Brother"),L("Sœur","Sister"),L("Frère/sœur","Sibling")), uncW=x=>word(x,L("Oncle","Uncle"),L("Tante","Aunt"),L("Oncle/tante","Uncle/aunt"));
+  const par=parentsOf(pid); const pus=(D.parentUnions.get(pid)||[]).filter(u=>{ const x=S.unions.get(u); return x&&!x.deleted });
+  const place=famPlace(pid); if(place) out.push([t("parents"),[nm(pid)+", "+place+"."]]);
+  const gp=[]; par.forEach(p=>{ const g=parentsOf(p); if(g.length) gp.push(L("Côté de ","On the side of ")+nm(p)+" : "+g.map(nm).join(and)) }); if(gp.length) out.push([L("Grands-parents","Grandparents"),gp]);
+  const sib=[]; pus.forEach(u=>kidsOf(u).forEach((k,i)=>sib.push(k===pid?`${i+1}. ${nm(k)} - ${L("cette famille","this family")}`:`${i+1}. ${sibW(k)} : ${nm(k)}${yrs(k)}${tail(k)}`)));
+  if(sib.length>1) out.push([L("Frères et sœurs, par ordre de naissance","Brothers and sisters, in birth order"),sib]);
+  const half=[]; par.forEach(p=>(D.unionsOf.get(p)||[]).forEach(u=>{ if(!pus.includes(u)) kidsOf(u).forEach(k=>{ if(k!==pid) half.push(`${sibW(k)} (${L("par","through")} ${nm(p)}) : ${nm(k)}${yrs(k)}${tail(k)}`) }) }));
+  if(half.length) out.push([L("Demi-frères et demi-sœurs","Half-brothers and half-sisters"),half]);
+  par.forEach(p=>{ const l=[]; let cous=0; (D.parentUnions.get(p)||[]).forEach(u=>{ const x=S.unions.get(u); if(!x||x.deleted) return; kidsOf(u).forEach(k=>{ if(k===p) return; cous+=kidsN(k); l.push(`${uncW(k)} : ${nm(k)}${yrs(k)}${tail(k)}`) }) });
+    if(l.length) out.push([L("Oncles et tantes, côté de ","Uncles and aunts, on the side of ")+nm(p)+(cous?` (${cous} ${L(cous>1?"cousins et cousines":"cousin ou cousine",cous>1?"cousins":"cousin")})`:""),l]) });
+  (D.unionsOf.get(pid)||[]).forEach(u=>partnersOf(u,pid).forEach(sp=>{ const g=parentsOf(sp); if(g.length) out.push([L("Parents de ","Parents of ")+nm(sp),[g.map(nm).join(and)]]) }));
+  return out }
+function treeTitle(){ const h=famHead(); return h?famTitle(h):TREE_ROOT?(lineages().find(l=>l.uid===TREE_ROOT)||{}).name||"":(S.site&&S.site.familyName)||"" }
+function treeSub(){ const h=famHead(); if(!h) return ""; const pl=famPlace(h); return [pl?fullName(P_(h))+", "+pl:"",(S.site&&S.site.familyName)||""].filter(Boolean).join(" · ") }
+function treeTitleW(){ return Math.max(textW(treeTitle(),"400 28px Gloock, Georgia, serif"),textW(treeSub(),"400 14px Gloock, Georgia, serif"))+100 }
+function openFamily(pid){ TREE_ROOT="p:"+pid; treeMounted=false; needsFit=true; closeSheet(); go("tree") }
 function brClass(id){const b=D.branch.get(id);return b==null||b<0?"brx":"br"+b}
 function isOutsideChild(id){ return false }
 function partnersOf(uid,exclude){const u=S.unions.get(uid);return (u.partnerIds||[]).filter(x=>x!==exclude&&D.live(x))}
@@ -843,7 +882,7 @@ function renderChrome(){
   else ro.hidden=true;
 }
 function go(r){ if(route===r){render();return} route=r; try{history.replaceState(null,"","#"+r)}catch(e){} window.scrollTo(0,0); render() }
-document.addEventListener("click",e=>{ const b=e.target.closest("[data-route]"); if(b){ e.preventDefault(); go(b.dataset.route) } const sgb=e.target.closest("[data-sugs]"); if(sgb){ e.preventDefault(); openSugs() } const ls=e.target.closest("[data-login-signin]"); if(ls){ e.preventDefault(); openLogin(null,"signin") } const lv=e.target.closest("[data-livret]"); if(lv){ e.preventDefault(); $$("details.disp").forEach(d=>d.open=false); openLivret() } const l=e.target.closest("[data-login]"); if(l){ e.preventDefault(); openLogin() } const jn=e.target.closest("[data-join]"); if(jn){ e.preventDefault(); openJoin() } const lo=e.target.closest("[data-logout]"); if(lo&&auth){ auth.signOut(); toast(t("logout")) } });
+document.addEventListener("click",e=>{ const b=e.target.closest("[data-route]"); if(b){ e.preventDefault(); go(b.dataset.route) } const sgb=e.target.closest("[data-sugs]"); if(sgb){ e.preventDefault(); openSugs() } const ls=e.target.closest("[data-login-signin]"); if(ls){ e.preventDefault(); openLogin(null,"signin") } const lv=e.target.closest("[data-livret]"); if(lv){ e.preventDefault(); $$("details.disp").forEach(d=>d.open=false); openLivret() } const ft=e.target.closest("[data-famtree]"); if(ft){ e.preventDefault(); openFamily(ft.dataset.famtree) } const l=e.target.closest("[data-login]"); if(l){ e.preventDefault(); openLogin() } const jn=e.target.closest("[data-join]"); if(jn){ e.preventDefault(); openJoin() } const lo=e.target.closest("[data-logout]"); if(lo&&auth){ auth.signOut(); toast(t("logout")) } });
 $("#brandBtn").onclick=()=>go("home");
 $("#helpBtn").onclick=()=>openHelp();
 $("#bigBtn").onclick=()=>{ PREF.big=!PREF.big; savePrefs(); applyBig() };
@@ -942,7 +981,7 @@ function renderHome(){
   const inp=$("#homeFind"), res=$("#homeRes");
   inp.addEventListener("input",()=>{ res.innerHTML=resultsHTML(searchPeople(inp.value)) });
   res.addEventListener("click",e=>{const b=e.target.closest("[data-open]"); if(b) openProfile(b.dataset.open)});
-  $$(".bcard").forEach(b=>b.onclick=()=>{ const id=b.dataset.branch; D.heads.forEach(h=>{ if(h!==id) collapsed.add(h) }); collapsed.delete(id); saveCollapsed(); pendingFocus={id,zoom:0.85,top:true}; go("tree") });
+  $$(".bcard").forEach(b=>b.onclick=()=>{ const id=b.dataset.branch; TREE_ROOT=null; treeMounted=false; D.heads.forEach(h=>{ if(h!==id) collapsed.add(h) }); collapsed.delete(id); saveCollapsed(); pendingFocus={id,zoom:0.85,top:true}; go("tree") });
   const ha=$("#homeAdd"); if(ha) ha.onclick=()=>{ if(!ME.acct) openLogin(); else if(ME.pend) openProfile(ME.pend); else if(!ME.owner&&!ME.pid) openJoin(); else if(ME.pid) openProfile(ME.pid); else openWizard() };
   const td=$("#homeTodo"); if(td) td.onclick=()=>{ DIRF.special="todo"; go("dir") };
 }
@@ -1063,7 +1102,8 @@ function textW(s,font){mctx.font=font;return mctx.measureText(s).width}
 function fitText(s,maxW,font){ s=String(s||""); if(textW(s,font)<=maxW) return s; while(s.length>1&&textW(s+"…",font)>maxW) s=s.slice(0,-1); return s.trimEnd()+"…" }
 const F_SUR="700 11px 'Atkinson Hyperlegible', Arial, sans-serif", F_GIV="700 15px 'Atkinson Hyperlegible', Arial, sans-serif", F_META="400 12.5px 'Atkinson Hyperlegible', Arial, sans-serif", F_LBL="700 11.5px 'Atkinson Hyperlegible', Arial, sans-serif";
 function groupLabel(parentId,uid,count){
-  if(count<2||parentId==="__root"||!PREF.spouses) return "";
+  if(parentId==="__root"&&D.focus&&count>1) parentId=D.focus; // a family view of someone with several unions: say which children are with whom
+  else if(count<2||parentId==="__root"||!PREF.spouses) return "";
   const others=partnersOf(uid,parentId); return others.length?`${t("withP")} ${fullName(P_(others[0]))}`:"" }
 function pw(n){return (n.root?G.FW:G.CW)+n.spouses.length*(G.SW+G.SG)}
 function nh(n){return n.root?G.FH:G.CH}
@@ -1285,6 +1325,7 @@ function renderTree(){
       <details class="disp"><summary class="btn sm">${t("download")} ▾</summary><div class="pop stack" style="gap:8px">
         <button class="btn sm" id="tPdf">${t("pdfTree")}</button><button class="btn sm" id="tPng">${t("pngTree")}</button><button class="btn sm primary" data-livret>${t("livret")}</button></div></details>
      </div>
+     <div class="hint" id="famNote" hidden></div>
      <div class="legend"><span><i class="lg-ver">?</i>${t("lgVerify")}</span><span><i class="lg-raise"></i>${t("lgRaised")}</span></div>
      <div class="vp" id="vp"><svg id="tsvg" role="img" aria-label="${t("tree")}"><style>${SVG_CSS}</style><g id="troot"></g></svg>
       <div class="zoomctl"><button id="zIn" aria-label="${t("zoomIn")}">+</button><button id="zOut" aria-label="${t("zoomOut")}">−</button><button id="zFit" aria-label="${t("fit")}">${ICONS.fit}</button></div></div>
@@ -1293,11 +1334,19 @@ function renderTree(){
   }
   drawTree();
 }
-function treeRootSelect(){ const ls=lineages(); if(!ls.length) return "";
-  return `<select class="inp" id="rootSel" style="width:auto;min-height:40px;font-weight:700;font-size:14px" aria-label="${t("lineage")}"><option value="">${esc((S.site&&S.site.familyName)||"MBEU YIMCHEU")}</option>${ls.map(l=>`<option value="${esc(l.uid)}" ${TREE_ROOT===l.uid?"selected":""}>${esc(l.name)}</option>`).join("")}</select>` }
+function treeRootSelect(){ derive(); const ls=lineages(), head=famHead(), mine=myFamHead(), heads=D.heads.filter(hasKids);
+  const known=new Set(heads.map(h=>"p:"+h)); if(mine) known.add("p:"+mine);
+  const opt=(v,label)=>`<option value="${esc(v)}" ${TREE_ROOT===v?"selected":""}>${esc(label)}</option>`;
+  return `<select class="inp" id="rootSel" style="width:auto;max-width:100%;min-height:40px;font-weight:700;font-size:14px" aria-label="${t("lineage")}"><option value="">${esc((S.site&&S.site.familyName)||"MBEU YIMCHEU")}</option>
+    ${mine?opt("p:"+mine,t("myFam")):""}${head&&!known.has(TREE_ROOT)?opt(TREE_ROOT,famTitle(head)):""}
+    ${heads.length?`<optgroup label="${esc(t("branches"))}">${heads.map(h=>opt("p:"+h,`${D.heads.indexOf(h)+1}. ${fullName(P_(h))}`)).join("")}</optgroup>`:""}
+    ${ls.length?`<optgroup label="${esc(t("lineage"))}">${ls.map(l=>opt(l.uid,l.name)).join("")}</optgroup>`:""}</select>` }
 function currentLayout(target){ return PREF.layout==="radial"?layoutRadial():PREF.layout==="tree"?layoutTree():layoutColumns(target) }
 function drawTree(){
   derive(TREE_ROOT);
+  const fn=$("#famNote"); if(fn){ const h=D.focus; fn.hidden=!h; if(h){ const pl=famPlace(h);
+      fn.innerHTML=`<b style="color:var(--ink)">${esc(famTitle(h))}</b>${pl?" · "+esc(fullName(P_(h))+", "+pl):""} <button class="btn sm ghost" id="famAll" style="color:var(--accent);min-height:28px;padding:0 4px">‹ ${t("wholeFam")}</button>`;
+      $("#famAll").onclick=()=>{ TREE_ROOT=null; treeMounted=false; renderTree() } } }
   const vs=vpSize(); TL=currentLayout(Math.max(0.5,Math.min(3,vs.w/Math.max(1,vs.h))));
   const g=$("#troot"); if(!g) return;
   g.innerHTML=fixClips(treeSVGInner(TL));
@@ -1359,12 +1408,12 @@ function loadJsPDF(){ if(window.jspdf) return Promise.resolve(); if(jsPdfLoading
   jsPdfLoading=new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s)}); return jsPdfLoading }
 async function treeCanvas(target){
   derive(TREE_ROOT); const L=currentLayout(target||1.41);
-  const b=L.bounds, pad=50, title=TREE_ROOT?(lineages().find(l=>l.uid===TREE_ROOT)||{}).name||"":(S.site&&S.site.familyName)||"";
-  const W=b.w+pad*2, H=b.h+pad*2+70;
+  const b=L.bounds, pad=50, title=treeTitle();
+  const W=Math.max(b.w+pad*2,treeTitleW()), H=b.h+pad*2+70;
   const brCSS=Array.from({length:11},(_,i)=>`.br${i}{--bc:var(--b${i});--bt:var(--bt${i})}`).join("")+`.brx{--bc:var(--line-strong);--bt:var(--surface-2)}`;
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><style>svg{${EXPORT_VARS}}${brCSS}${SVG_CSS}.pill{display:none}</style><rect width="100%" height="100%" fill="#ffffff"/>
-   <text class="fnd-t" x="${W/2}" y="44" style="font-size:28px">${esc(title)}</text>
-   <g transform="translate(${pad-b.x},${pad+70-b.y})">${fixClips(treeSVGInner(L))}</g></svg>`;
+   <text class="fnd-t" x="${W/2}" y="44" style="font-size:28px">${esc(title)}</text>${treeSub()?`<text class="fnd-t" x="${W/2}" y="68" style="font-size:14px;fill:#596080">${esc(treeSub())}</text>`:""}
+   <g transform="translate(${(W-b.w)/2-b.x},${pad+70-b.y})">${fixClips(treeSVGInner(L))}</g></svg>`;
   const scale=Math.min(2,9000/Math.max(W,H));
   const img=new Image(); const url=URL.createObjectURL(new Blob([svg],{type:"image/svg+xml;charset=utf-8"}));
   await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url});
@@ -1377,12 +1426,12 @@ async function exportTree(kind){
       await loadJsPDF(); const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:W>=H?"landscape":"portrait",unit:"pt",format:"a3"});
       const pw_=doc.internal.pageSize.getWidth(), ph_=doc.internal.pageSize.getHeight(); const s=Math.min((pw_-40)/W,(ph_-40)/H);
       doc.addImage(c.toDataURL("image/jpeg",0.92),"JPEG",(pw_-W*s)/2,(ph_-H*s)/2,W*s,H*s); return saveFile(base+".pdf",doc.output("blob")) }catch(e){ toast(t("dlNo")); return } }
-  const b=TL.bounds, pad=50, title=(S.site&&S.site.familyName)||"";
-  const W=b.w+pad*2, H=b.h+pad*2+70;
+  const b=TL.bounds, pad=50, title=treeTitle();
+  const W=Math.max(b.w+pad*2,treeTitleW()), H=b.h+pad*2+70;
   const brCSS=Array.from({length:11},(_,i)=>`.br${i}{--bc:var(--b${i});--bt:var(--bt${i})}`).join("")+`.brx{--bc:var(--line-strong);--bt:var(--surface-2)}`;
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><style>svg{${EXPORT_VARS}}${brCSS}${SVG_CSS}</style><rect width="100%" height="100%" fill="#ffffff"/>
-   <text class="fnd-t" x="${W/2}" y="44" style="font-size:28px">${esc(title)}</text>
-   <g transform="translate(${pad-b.x},${pad+70-b.y})">${fixClips(treeSVGInner(TL))}</g></svg>`;
+   <text class="fnd-t" x="${W/2}" y="44" style="font-size:28px">${esc(title)}</text>${treeSub()?`<text class="fnd-t" x="${W/2}" y="68" style="font-size:14px;fill:#596080">${esc(treeSub())}</text>`:""}
+   <g transform="translate(${(W-b.w)/2-b.x},${pad+70-b.y})">${fixClips(treeSVGInner(TL))}</g></svg>`;
   const maxSide=9000; const scale=Math.min(2,maxSide/Math.max(W,H));
   const img=new Image(); const url=URL.createObjectURL(new Blob([svg],{type:"image/svg+xml;charset=utf-8"}));
   try{ await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url}) }catch(e){ toast(t("dlNo")); return }
@@ -1489,10 +1538,11 @@ function bindSugs(){ const sh=$("#sheet");
 
 /* ---------------- LIVRET DE FAMILLE (PDF) ---------------- */
 function openLivret(){ SH.open=true; SH.mode="livret"; drawSheet() }
-function livretHTML(){ derive();
+function livretHTML(){ derive(); const fh=famHead();
   return sheetTop(t("livret"))+`<div class="stack"><p style="margin:0">${esc(t("livretIntro"))}</p>
     <fieldset class="fsec"><legend>${t("livretScope")}</legend><div class="stack" style="gap:6px">
-      <label class="check"><input type="radio" name="lvs" value="all" checked> ${t("livretAll")}</label>
+      ${fh?`<label class="check"><input type="radio" name="lvs" value="focus" checked> ${esc(famTitle(fh))}</label>`:""}
+      <label class="check"><input type="radio" name="lvs" value="all" ${fh?"":"checked"}> ${t("livretAll")}</label>
       <label class="check"><input type="radio" name="lvs" value="branch"> ${t("livretBranch")}</label>
       <select class="inp" id="lv-branch">${D.heads.map((h,i)=>`<option value="${esc(h)}">${i+1}. ${esc(fullName(P_(h)))}</option>`).join("")}</select>
       ${ME.pid?`<label class="check"><input type="radio" name="lvs" value="mine"> ${t("livretMine")}</label>`:""}</div></fieldset>
@@ -1501,8 +1551,8 @@ function livretHTML(){ derive();
     <p class="hint" id="lv-prog" style="margin:0"></p>
     <button class="btn primary" id="lv-go">${t("livretGo")}</button></div>` }
 function bindLivret(){ $("#lv-branch").onchange=()=>{ $('input[name="lvs"][value="branch"]').checked=true };
-  $("#lv-go").onclick=async()=>{ const b=$("#lv-go"); b.disabled=true; const scope=$('input[name="lvs"]:checked').value;
-    try{ await makeLivret({scope,branch:$("#lv-branch").value,tree:$("#lv-tree").checked,photos:$("#lv-photos").checked,prog:$("#lv-prog")}) }catch(e){ console.warn(e); toast(t("dlNo")) } b.disabled=false } }
+  $("#lv-go").onclick=async()=>{ const b=$("#lv-go"); b.disabled=true; const sc=$('input[name="lvs"]:checked').value; const person=sc==="focus"?famHead():sc==="mine"?myFamHead():sc==="branch"?$("#lv-branch").value:null;
+    try{ await makeLivret({scope:person?"fam":"all",person,tree:$("#lv-tree").checked,photos:$("#lv-photos").checked,prog:$("#lv-prog")}) }catch(e){ console.warn(e); toast(t("dlNo")) } b.disabled=false } }
 function pdfTxt(s){ return String(s??"").replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D\u00AB\u00BB]/g,'"').replace(/[\u2013\u2014]/g,"-").replace(/\u2026/g,"...").replace(/\u0153/g,"oe").replace(/\u0152/g,"OE").replace(/\u2020/g,"+").replace(/[^\x00-\xFF]/g,"") }
 async function makeLivret(o){
   derive(); await loadJsPDF(); const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:"pt",format:"a4"});
@@ -1517,9 +1567,8 @@ async function makeLivret(o){
     const lines=doc.splitTextToSize(pdfTxt(str),w); lines.forEach(l=>{ need(size+gap); doc.text(l,x,y+size); y+=size+gap }) };
   // which people
   let roots, title;
-  if(o.scope==="branch"){ roots=[o.branch]; title=L("Branche","Branch")+" "+(D.heads.indexOf(o.branch)+1)+" - "+fullName(P_(o.branch)) }
-  else if(o.scope==="mine"&&ME.pid){ roots=[ME.pid]; title=L("Famille de ","Family of ")+fullName(P_(ME.pid)) }
-  else { roots=D.heads.slice(); title=L("Descendants de ","Descendants of ")+D.founders.map(f=>fullName(P_(f))).join(L(" et "," and ")) }
+  if(o.scope==="fam"&&o.person&&P_(o.person)){ roots=[o.person]; const bi=D.heads.indexOf(o.person); title=(bi>=0?L("Branche","Branch")+" "+(bi+1)+" - ":"")+famTitle(o.person) }
+  else { o.scope="all"; roots=D.heads.slice(); title=L("Descendants de ","Descendants of ")+D.founders.map(f=>fullName(P_(f))).join(L(" et "," and ")) }
   // ---- cover
   doc.setFillColor(29,39,94); doc.rect(0,0,PW,PH*0.46,"F");
   doc.setTextColor(244,245,251); doc.setFont("times","normal"); doc.setFontSize(15); doc.text(pdfTxt(L("LIVRET DE FAMILLE","FAMILY BOOK")),M,PH*0.18);
@@ -1532,9 +1581,12 @@ async function makeLivret(o){
   const cs=[...new Set([...all].map(id=>P_(id).country).filter(Boolean))].map(cname); if(cs.length) text(L("Pays : ","Countries: ")+cs.join(", "),{size:12});
   y+=10; text(L("Édité le ","Printed on ")+new Date().toLocaleDateString(fr?"fr-FR":"en-US",{day:"numeric",month:"long",year:"numeric"}),{size:10,color:mute});
   text(L("Les numéros de téléphone et adresses e-mail ne figurent jamais dans ce livret.","Phone numbers and emails never appear in this book."),{size:9,color:mute});
+  // ---- one family's book: the wider family, seen from where they stand
+  if(o.scope==="fam"){ y+=16; text(L("Notre place dans la famille","Our place in the family"),{size:15,bold:true}); y+=2;
+    famLens(o.person).forEach(([h,ls])=>{ need(44); y+=7; text(h,{size:11,bold:true,color:acc}); ls.forEach(l=>text(l,{size:10})) }) }
   // ---- tree
-  if(o.tree&&o.scope!=="mine"){ o.prog.textContent=t("preparing"); const saved=[...collapsed]; collapsed.clear(); if(o.scope==="branch") D.heads.forEach(h=>{ if(h!==o.branch) collapsed.add(h) });
-    const prevRoot=TREE_ROOT; TREE_ROOT=null; const lay=PREF.layout; PREF.layout="cols";
+  if(o.tree){ o.prog.textContent=t("preparing"); const saved=[...collapsed]; collapsed.clear();
+    const prevRoot=TREE_ROOT; TREE_ROOT=o.scope==="fam"?"p:"+o.person:null; const lay=PREF.layout; PREF.layout="cols";
     try{ const {canvas:c,W,H}=await treeCanvas(1.41); doc.addPage("a4","landscape"); const pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight(); const sc=Math.min((pw-40)/W,(ph-40)/H); doc.addImage(c.toDataURL("image/jpeg",0.9),"JPEG",(pw-W*sc)/2,(ph-H*sc)/2,W*sc,H*sc) }catch(e){ console.warn(e) }
     collapsed=new Set(saved); PREF.layout=lay; TREE_ROOT=prevRoot; derive(); doc.addPage("a4","portrait"); y=M }
   else newPage();
@@ -1572,7 +1624,8 @@ async function makeLivret(o){
     await rec(r,0); o.prog.textContent=`${n}/${roots.length}` }
   // page numbers
   const np=doc.getNumberOfPages(); for(let i=2;i<=np;i++){ doc.setPage(i); doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...mute); const w2=doc.internal.pageSize.getWidth(), h2=doc.internal.pageSize.getHeight(); doc.text(pdfTxt(fam)+"  -  "+i+" / "+np,w2/2,h2-24,{align:"center"}) }
-  o.prog.textContent=""; const fname=`livret-${fam.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}.pdf`;
+  o.prog.textContent=""; const slug=x=>x.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+  const fname=`livret-${slug(fam)}${o.scope==="fam"?"-"+slug(fullName(P_(o.person))):""}.pdf`;
   saveFile(fname,doc.output("blob")) }
 
 /* ---------------- SHEET (profile, edit, add, wizard) ---------------- */
@@ -1658,7 +1711,7 @@ function profileHTML(id){
      <button class="btn" data-mode="photo">${p.thumb?t("changePhoto"):t("addPhoto")}</button>
      ${mine?`<button class="btn" data-mode="child">${t("addChild")}</button>
      <button class="btn" data-mode="spouse">${t("addSpouse")}</button>`:""}</div>`:""}
-   <div class="row">${(blood||D.spouseOf.has(id))?`<button class="btn sm" id="shTree">${t("showInTree")}</button>`:""}<button class="btn sm" data-sharelink="${esc(id)}">${t("shareRecord")}</button>
+   <div class="row">${(blood||D.spouseOf.has(id))?`<button class="btn sm" id="shTree">${t("showInTree")}</button>`:""}${hasKids(id)?`<button class="btn sm" data-famtree="${esc(id)}">${t("famTree")}</button>`:""}<button class="btn sm" data-sharelink="${esc(id)}">${t("shareRecord")}</button>
      ${!ME.acct&&S.dbState==="ok"?`<button class="btn sm primary" data-login>${t("editTree")}</button>`:""}
      ${ME.acct&&!ME.pid&&!ME.pend&&memSeen&&!S.claims.has(id)&&(blood||D.spouseOf.has(id))&&!p.placeholder?`<button class="btn sm primary" data-claim="${esc(id)}">${t("itsMe")}</button>`:""}
      ${ME.pid&&id===ME.pid&&D.blood.has(id)?`<button class="btn sm" data-moveparent>${t("moveParent")}</button>`:""}
